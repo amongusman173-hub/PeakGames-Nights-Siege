@@ -593,7 +593,7 @@ function initGame() {
 
     cam: { x:0, y:0 },
     weather: WEATHERS[0],
-    weatherTimer: 30000,
+    weatherTimer: 120000,
     nightVisionActive: false,
     flashlightOn: false,
     flashlightBattery: 100, // percent, drains while on
@@ -656,16 +656,12 @@ function buildPlayerFromPerks() {
 // ═══════════════════════════════════════════════════════════════
 function generateMap() {
   mapTiles = [];
-  // ── Base terrain with noise-like variation ──
+
+  // ── Step 1: Fill with grass ──
   for (let y = 0; y < MAP_H; y++) {
     mapTiles[y] = [];
     for (let x = 0; x < MAP_W; x++) {
-      if (x===0||y===0||x===MAP_W-1||y===MAP_H-1) { mapTiles[y][x]='wall'; continue; }
-      // Simple noise using sin/cos for organic feel
-      const n = Math.sin(x*0.3)*Math.cos(y*0.25) + Math.sin(x*0.7+y*0.4)*0.5;
-      if      (n > 0.8)  mapTiles[y][x] = 'rock';
-      else if (n > 0.55) mapTiles[y][x] = 'tree';
-      else               mapTiles[y][x] = 'grass';
+      mapTiles[y][x] = (x===0||y===0||x===MAP_W-1||y===MAP_H-1) ? 'wall' : 'grass';
     }
   }
 
@@ -676,18 +672,11 @@ function generateMap() {
     }
   }
   function clearRect(bx,by,bw,bh) { placeRect(bx,by,bw,bh,'grass'); }
+  function isWater(tx,ty) { return tx>=0&&ty>=0&&tx<MAP_W&&ty<MAP_H&&mapTiles[ty][tx]==='water'; }
 
-  // ── Clear large base area ──
-  for (let dy=-8;dy<=8;dy++) for (let dx=-8;dx<=8;dx++) {
-    const tx=BASE_X+dx, ty=BASE_Y+dy;
-    if (tx>0&&ty>0&&tx<MAP_W-1&&ty<MAP_H-1) mapTiles[ty][tx]='grass';
-  }
-
-  // ── Main roads (cross through base) ──
+  // ── Step 2: Roads first ──
   for (let x=1;x<MAP_W-1;x++) mapTiles[BASE_Y][x]='road';
   for (let y=1;y<MAP_H-1;y++) mapTiles[y][BASE_X]='road';
-
-  // ── Grid of secondary roads forming city blocks ──
   const roadSpacing = 18;
   for (let r=roadSpacing; r<MAP_H-1; r+=roadSpacing) {
     if (Math.abs(r-BASE_Y)>3) for (let x=1;x<MAP_W-1;x++) mapTiles[r][x]='road';
@@ -696,135 +685,200 @@ function generateMap() {
     if (Math.abs(c-BASE_X)>3) for (let y=1;y<MAP_H-1;y++) mapTiles[y][c]='road';
   }
 
-  // ── River cutting across the map ──
+  // ── Step 3: River (before trees/rocks so they don't spawn in it) ──
+  // Track which columns have water for bridge placement
+  const riverCols = new Set();
   let riverY = Math.floor(MAP_H * 0.35);
   for (let x=1; x<MAP_W-1; x++) {
     riverY += Math.floor(Math.sin(x*0.18)*1.5);
     riverY = Math.max(5, Math.min(MAP_H-6, riverY));
-    if (Math.abs(riverY - BASE_Y) < 8) continue; // don't cut through base
+    if (Math.abs(riverY - BASE_Y) < 10) continue;
     for (let w=-1; w<=1; w++) {
       const ry = riverY+w;
-      if (ry>0&&ry<MAP_H-1) mapTiles[ry][x]='water';
+      if (ry>0&&ry<MAP_H-1) { mapTiles[ry][x]='water'; riverCols.add(x); }
+    }
+  }
+  // Bridges at road crossings — clear water on roads so you can cross
+  for (let x=1;x<MAP_W-1;x++) {
+    for (let y=1;y<MAP_H-1;y++) {
+      if (mapTiles[y][x]==='water' && (
+        (y===BASE_Y) ||
+        (Math.abs(y - Math.round(y/roadSpacing)*roadSpacing) <= 1)
+      )) {
+        mapTiles[y][x]='road'; // bridge
+      }
     }
   }
 
-  // ── City blocks: dense buildings in quadrants ──
-  const cityZones = [
-    {x:Math.floor(MAP_W*0.1), y:Math.floor(MAP_H*0.1), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
-    {x:Math.floor(MAP_W*0.65), y:Math.floor(MAP_H*0.1), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
-    {x:Math.floor(MAP_W*0.1), y:Math.floor(MAP_H*0.65), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
-    {x:Math.floor(MAP_W*0.65), y:Math.floor(MAP_H*0.65), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
+  // ── Step 4: Scattered individual trees (not clumps) ──
+  // Use a minimum spacing to prevent clumping
+  const treePlaced = [];
+  const MIN_TREE_DIST = 3; // tiles apart
+  for (let attempt=0; attempt<800; attempt++) {
+    const tx = 2 + Math.floor(Math.random()*(MAP_W-4));
+    const ty = 2 + Math.floor(Math.random()*(MAP_H-4));
+    if (mapTiles[ty][tx] !== 'grass') continue;
+    if (Math.hypot(tx-BASE_X,ty-BASE_Y) < 12) continue;
+    // Check spacing from other trees
+    let tooClose = false;
+    for (const [ox,oy] of treePlaced) {
+      if (Math.hypot(tx-ox,ty-oy) < MIN_TREE_DIST) { tooClose=true; break; }
+    }
+    if (tooClose) continue;
+    mapTiles[ty][tx]='tree';
+    treePlaced.push([tx,ty]);
+    if (treePlaced.length >= 180) break;
+  }
+
+  // ── Step 5: Small forest patches (max 5 trees each, with gaps) ──
+  const forestCenters = [
+    [10,10],[MAP_W-12,10],[10,MAP_H-12],[MAP_W-12,MAP_H-12],
+    [Math.floor(MAP_W*0.45),Math.floor(MAP_H*0.15)],
+    [Math.floor(MAP_W*0.45),Math.floor(MAP_H*0.78)],
+    [Math.floor(MAP_W*0.2),Math.floor(MAP_H*0.5)],
+    [Math.floor(MAP_W*0.8),Math.floor(MAP_H*0.5)],
   ];
-  cityZones.forEach(zone => {
-    for (let i=0; i<20; i++) {
-      const bx = zone.x + Math.floor(Math.random()*zone.w);
-      const by = zone.y + Math.floor(Math.random()*zone.h);
-      const bw = Math.floor(Math.random()*4)+2;
-      const bh = Math.floor(Math.random()*4)+2;
-      if (Math.hypot(bx-BASE_X,by-BASE_Y)<14) continue;
-      if (mapTiles[by]&&mapTiles[by][bx]==='road') continue;
-      placeRect(bx,by,bw,bh,'building');
-    }
-  });
-
-  // ── Scattered random buildings ──
-  for (let i=0;i<30;i++) {
-    const bx=Math.floor(Math.random()*(MAP_W-20))+10;
-    const by=Math.floor(Math.random()*(MAP_H-20))+10;
-    const bw=Math.floor(Math.random()*5)+2;
-    const bh=Math.floor(Math.random()*5)+2;
-    if (Math.hypot(bx-BASE_X,by-BASE_Y)<14) continue;
-    placeRect(bx,by,bw,bh,'building');
-  }
-
-  // ── Dense forest zones ──
-  [[10,10,12],[MAP_W-22,10,12],[10,MAP_H-22,12],[MAP_W-22,MAP_H-22,12],
-   [Math.floor(MAP_W*0.45),Math.floor(MAP_H*0.15),10],
-   [Math.floor(MAP_W*0.45),Math.floor(MAP_H*0.75),10]].forEach(([fx,fy,fr])=>{
+  forestCenters.forEach(([fx,fy])=>{
+    const fr = 5 + Math.floor(Math.random()*3); // radius 5-7
     for(let dy=-fr;dy<=fr;dy++) for(let dx=-fr;dx<=fr;dx++) {
-      if(Math.hypot(dx,dy)<fr && Math.random()<0.75) {
+      if(Math.hypot(dx,dy)<fr && Math.random()<0.45) { // 45% fill = open forest, not solid wall
         const tx=fx+dx, ty=fy+dy;
-        if(tx>1&&ty>1&&tx<MAP_W-2&&ty<MAP_H-2&&Math.hypot(tx-BASE_X,ty-BASE_Y)>16)
+        if(tx>2&&ty>2&&tx<MAP_W-3&&ty<MAP_H-3
+           && mapTiles[ty][tx]==='grass'
+           && Math.hypot(tx-BASE_X,ty-BASE_Y)>14)
           mapTiles[ty][tx]='tree';
       }
     }
+    // Always leave a clear path through the forest (horizontal corridor)
+    for(let dx=-fr;dx<=fr;dx++) {
+      const tx=fx+dx, ty=fy;
+      if(tx>1&&tx<MAP_W-2&&ty>1&&ty<MAP_H-2) mapTiles[ty][tx]='grass';
+    }
   });
 
-  // ── Rocky outcrops ──
-  for (let i=0;i<8;i++) {
-    const rx=Math.floor(Math.random()*(MAP_W-20))+10;
-    const ry=Math.floor(Math.random()*(MAP_H-20))+10;
+  // ── Step 6: Rocky outcrops (small, spaced apart) ──
+  for (let i=0;i<12;i++) {
+    const rx=4+Math.floor(Math.random()*(MAP_W-8));
+    const ry=4+Math.floor(Math.random()*(MAP_H-8));
     if (Math.hypot(rx-BASE_X,ry-BASE_Y)<12) continue;
-    for(let dy=-3;dy<=3;dy++) for(let dx=-3;dx<=3;dx++) {
-      if(Math.hypot(dx,dy)<3+Math.random()*1.5 && Math.random()<0.8) {
-        const tx=rx+dx, ty=ry+dy;
-        if(tx>1&&ty>1&&tx<MAP_W-2&&ty<MAP_H-2) mapTiles[ty][tx]='rock';
-      }
+    if (mapTiles[ry][rx]==='water') continue;
+    // Small L-shaped or single rocks, never fully enclosing
+    const rockCount = 2 + Math.floor(Math.random()*4);
+    for(let r=0;r<rockCount;r++) {
+      const tx=rx+Math.floor(Math.random()*3)-1;
+      const ty=ry+Math.floor(Math.random()*3)-1;
+      if(tx>1&&ty>1&&tx<MAP_W-2&&ty<MAP_H-2&&mapTiles[ty][tx]==='grass')
+        mapTiles[ty][tx]='rock';
     }
   }
 
-  // ── Named structures ──
+  // ── Step 7: City block buildings ──
+  const cityZones = [
+    {x:Math.floor(MAP_W*0.1), y:Math.floor(MAP_H*0.1), w:Math.floor(MAP_W*0.22), h:Math.floor(MAP_H*0.22)},
+    {x:Math.floor(MAP_W*0.68), y:Math.floor(MAP_H*0.1), w:Math.floor(MAP_W*0.22), h:Math.floor(MAP_H*0.22)},
+    {x:Math.floor(MAP_W*0.1), y:Math.floor(MAP_H*0.68), w:Math.floor(MAP_W*0.22), h:Math.floor(MAP_H*0.22)},
+    {x:Math.floor(MAP_W*0.68), y:Math.floor(MAP_H*0.68), w:Math.floor(MAP_W*0.22), h:Math.floor(MAP_H*0.22)},
+  ];
+  cityZones.forEach(zone => {
+    for (let i=0; i<18; i++) {
+      const bx = zone.x + Math.floor(Math.random()*zone.w);
+      const by = zone.y + Math.floor(Math.random()*zone.h);
+      const bw = Math.floor(Math.random()*3)+2;
+      const bh = Math.floor(Math.random()*3)+2;
+      if (Math.hypot(bx-BASE_X,by-BASE_Y)<14) continue;
+      if (mapTiles[by]&&(mapTiles[by][bx]==='road'||mapTiles[by][bx]==='water')) continue;
+      placeRect(bx,by,bw,bh,'building');
+    }
+  });
+  for (let i=0;i<25;i++) {
+    const bx=Math.floor(Math.random()*(MAP_W-20))+10;
+    const by=Math.floor(Math.random()*(MAP_H-20))+10;
+    const bw=Math.floor(Math.random()*4)+2;
+    const bh=Math.floor(Math.random()*4)+2;
+    if (Math.hypot(bx-BASE_X,by-BASE_Y)<14) continue;
+    if (mapTiles[by]&&(mapTiles[by][bx]==='water')) continue;
+    placeRect(bx,by,bw,bh,'building');
+  }
+
+  // ── Step 8: Clear base area (after everything else) ──
+  for (let dy=-9;dy<=9;dy++) for (let dx=-9;dx<=9;dx++) {
+    const tx=BASE_X+dx, ty=BASE_Y+dy;
+    if (tx>0&&ty>0&&tx<MAP_W-1&&ty<MAP_H-1) mapTiles[ty][tx]='grass';
+  }
+  // Re-draw main roads through base
+  for (let x=1;x<MAP_W-1;x++) mapTiles[BASE_Y][x]='road';
+  for (let y=1;y<MAP_H-1;y++) mapTiles[y][BASE_X]='road';
+
+  // ── Step 9: Named structures (clear area first, no water check needed — base area is clear) ──
   G.structures = [];
 
-  // Gas station (NW)
   const gsX=Math.floor(MAP_W*0.18), gsY=Math.floor(MAP_H*0.18);
   clearRect(gsX-2,gsY-2,12,9);
-  placeRect(gsX,gsY,4,3,'building');
-  placeRect(gsX+5,gsY,2,2,'building');
+  placeRect(gsX,gsY,4,3,'building'); placeRect(gsX+5,gsY,2,2,'building');
   G.structures.push({type:'gas_station',x:gsX*TILE,y:gsY*TILE,w:7*TILE,h:4*TILE,label:'⛽ Gas Station',looted:false,
     loot:[{type:'ammo',count:30},{type:'molotov',count:2},{type:'c4',count:1}]});
 
-  // Hospital (NE)
   const hX=Math.floor(MAP_W*0.78), hY=Math.floor(MAP_H*0.18);
-  clearRect(hX-2,hY-2,14,11);
-  placeRect(hX,hY,8,6,'building');
+  clearRect(hX-2,hY-2,14,11); placeRect(hX,hY,8,6,'building');
   G.structures.push({type:'hospital',x:hX*TILE,y:hY*TILE,w:8*TILE,h:6*TILE,label:'🏥 Hospital',looted:false,
     loot:[{type:'medkit',count:4},{type:'antidote',count:3},{type:'stim',count:2}]});
 
-  // School (SW)
   const scX=Math.floor(MAP_W*0.18), scY=Math.floor(MAP_H*0.78);
-  clearRect(scX-2,scY-2,16,12);
-  placeRect(scX,scY,10,6,'building');
+  clearRect(scX-2,scY-2,16,12); placeRect(scX,scY,10,6,'building');
   G.structures.push({type:'school',x:scX*TILE,y:scY*TILE,w:10*TILE,h:6*TILE,label:'🏫 School',looted:false,
     loot:[{type:'grenade',count:5},{type:'mine',count:4},{type:'barricade',count:6}]});
 
-  // Police station (SE)
   const psX=Math.floor(MAP_W*0.78), psY=Math.floor(MAP_H*0.78);
-  clearRect(psX-2,psY-2,12,10);
-  placeRect(psX,psY,7,5,'building');
+  clearRect(psX-2,psY-2,12,10); placeRect(psX,psY,7,5,'building');
   G.structures.push({type:'police',x:psX*TILE,y:psY*TILE,w:7*TILE,h:5*TILE,label:'🚔 Police Station',looted:false,
     loot:[{type:'grenade',count:4},{type:'mine',count:5},{type:'flash',count:4}]});
 
-  // Warehouse (W side)
   const wX=Math.floor(MAP_W*0.08), wY=Math.floor(MAP_H*0.5);
-  clearRect(wX-1,wY-2,12,9);
-  placeRect(wX,wY,9,6,'building');
+  clearRect(wX-1,wY-2,12,9); placeRect(wX,wY,9,6,'building');
   G.structures.push({type:'warehouse',x:wX*TILE,y:wY*TILE,w:9*TILE,h:6*TILE,label:'🏭 Warehouse',looted:false,
     loot:[{type:'barricade',count:10},{type:'turret',count:1},{type:'sentry',count:1}]});
 
-  // Military bunker (E side)
   const mbX=Math.floor(MAP_W*0.88), mbY=Math.floor(MAP_H*0.5);
-  clearRect(mbX-2,mbY-2,12,10);
-  placeRect(mbX,mbY,8,6,'building');
+  clearRect(mbX-2,mbY-2,12,10); placeRect(mbX,mbY,8,6,'building');
   G.structures.push({type:'bunker',x:mbX*TILE,y:mbY*TILE,w:8*TILE,h:6*TILE,label:'🪖 Military Bunker',looted:false,
     loot:[{type:'grenade',count:6},{type:'c4',count:3},{type:'airstrike',count:1}]});
 
-  // Supermarket (center-ish)
   const smX=Math.floor(MAP_W*0.55), smY=Math.floor(MAP_H*0.3);
-  clearRect(smX-2,smY-2,16,12);
-  placeRect(smX,smY,12,8,'building');
+  clearRect(smX-2,smY-2,16,12); placeRect(smX,smY,12,8,'building');
   G.structures.push({type:'supermarket',x:smX*TILE,y:smY*TILE,w:12*TILE,h:8*TILE,label:'🛒 Supermarket',looted:false,
     loot:[{type:'medkit',count:3},{type:'ammo',count:50},{type:'barricade',count:4}]});
 
-  // Park areas
-  [[18,18,6],[MAP_W-24,18,6],[18,MAP_H-24,6],[MAP_W-24,MAP_H-24,6],
-   [Math.floor(MAP_W*0.5),Math.floor(MAP_H*0.5)-15,5]].forEach(([px,py,pr])=>{
-    for(let dy=-pr;dy<=pr;dy++) for(let dx=-pr;dx<=pr;dx++) {
-      if(Math.hypot(dx,dy)<pr && px+dx>1&&py+dy>1&&px+dx<MAP_W-2&&py+dy<MAP_H-2
-         && Math.hypot(px+dx-BASE_X,py+dy-BASE_Y)>16)
-        mapTiles[py+dy][px+dx]='tree';
+  // ── Step 10: Connectivity pass — ensure no fully enclosed grass islands ──
+  // Flood-fill from base to find reachable tiles; open any blocked corridors
+  const reachable = Array.from({length:MAP_H},()=>new Array(MAP_W).fill(false));
+  const queue = [[BASE_X, BASE_Y]];
+  reachable[BASE_Y][BASE_X] = true;
+  while (queue.length) {
+    const [cx,cy] = queue.shift();
+    for (const [nx,ny] of [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]]) {
+      if (nx<0||ny<0||nx>=MAP_W||ny>=MAP_H||reachable[ny][nx]) continue;
+      const t = mapTiles[ny][nx];
+      if (t==='wall'||t==='tree'||t==='rock') continue; // solid
+      reachable[ny][nx]=true;
+      queue.push([nx,ny]);
     }
-  });
+  }
+  // Any grass/road/building/water tile not reachable → clear a path to nearest reachable
+  for (let y=1;y<MAP_H-1;y++) for (let x=1;x<MAP_W-1;x++) {
+    const t = mapTiles[y][x];
+    if (reachable[y][x]||t==='wall'||t==='tree'||t==='rock'||t==='water') continue;
+    // Carve a 1-tile corridor toward base
+    let cx=x, cy=y;
+    for (let step=0;step<MAP_W;step++) {
+      if (reachable[cy][cx]) break;
+      const dx2 = BASE_X>cx?1:BASE_X<cx?-1:0;
+      const dy2 = BASE_Y>cy?1:BASE_Y<cy?-1:0;
+      if (dx2!==0&&mapTiles[cy][cx+dx2]!=='water') cx+=dx2;
+      else if (dy2!==0&&mapTiles[cy+dy2][cx]!=='water') cy+=dy2;
+      else break;
+      if (mapTiles[cy][cx]==='tree'||mapTiles[cy][cx]==='rock') mapTiles[cy][cx]='grass';
+    }
+  }
 
   bakeMapCanvas();
   generateLootables();
@@ -939,7 +993,7 @@ function isSolid(ttx, tty) {
   if (ttx<0||tty<0||ttx>=MAP_W||tty>=MAP_H) return true;
   const t = mapTiles[tty][ttx];
   // Buildings are walkable — player can enter them
-  return t==='wall'||t==='tree'||t==='rock'||t==='water';
+  return t==='wall'||t==='tree'||t==='rock';
 }
 function isSolidWorld(wx, wy) {
   return isSolid(Math.floor(wx/TILE), Math.floor(wy/TILE));
@@ -1120,12 +1174,27 @@ function startNightWave() {
 function spawnZombie(type) {
   const def = ZOMBIE_TYPES[type];
   let x, y;
-  const side = Math.floor(Math.random()*4);
-  const m = TILE*2;
-  if      (side===0) { x=m+Math.random()*(MAP_W*TILE-m*2); y=m; }
-  else if (side===1) { x=MAP_W*TILE-m; y=m+Math.random()*(MAP_H*TILE-m*2); }
-  else if (side===2) { x=m+Math.random()*(MAP_W*TILE-m*2); y=MAP_H*TILE-m; }
-  else               { x=m; y=m+Math.random()*(MAP_H*TILE-m*2); }
+  // Spawn in a ring around the player — far enough not to pop in, close enough to be relevant
+  const MIN_DIST = 500, MAX_DIST = 900;
+  let attempts = 0;
+  do {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = MIN_DIST + Math.random() * (MAX_DIST - MIN_DIST);
+    x = G.player.x + Math.cos(angle) * dist;
+    y = G.player.y + Math.sin(angle) * dist;
+    // Clamp to map bounds
+    x = Math.max(TILE*2, Math.min((MAP_W-2)*TILE, x));
+    y = Math.max(TILE*2, Math.min((MAP_H-2)*TILE, y));
+    attempts++;
+  } while (isSolidWorld(x, y) && attempts < 20);
+  // Fallback to map edge if stuck
+  if (isSolidWorld(x, y)) {
+    const side = Math.floor(Math.random()*4), m = TILE*2;
+    if      (side===0) { x=m+Math.random()*(MAP_W*TILE-m*2); y=m; }
+    else if (side===1) { x=MAP_W*TILE-m; y=m+Math.random()*(MAP_H*TILE-m*2); }
+    else if (side===2) { x=m+Math.random()*(MAP_W*TILE-m*2); y=MAP_H*TILE-m; }
+    else               { x=m; y=m+Math.random()*(MAP_H*TILE-m*2); }
+  }
 
   const scale = 1 + (G.wave-1)*0.12;
   G.zombies.push({
@@ -1873,8 +1942,12 @@ function movePlayer(dt) {
   const infPenalty = p.infection >= 50 ? 1 - (p.infection-50)/100 * 0.5 : 1;
   const jockeySlow = p._jockeySlow > 0 ? 0.4 : 1;
   if (p._jockeySlow > 0) p._jockeySlow -= dt;
-  const sprintMult = p.sprinting ? 1.85 : 1;
-  const spd = (p.speed + (p.speedBonus||0) + (p.adrenalineTimer>0?1.5:0)) * infPenalty * sprintMult * jockeySlow * (dt/16.67);
+  // Water slows movement
+  const inWater = (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)] === 'water';
+  const waterSlow = inWater ? 0.45 : 1;
+  if (inWater && isMoving && Math.random()<0.15) spawnParticles(p.x,p.y,'#4a9eff',2,1.5);
+  const sprintMult = (p.sprinting && !inWater) ? 1.85 : 1; // can't sprint in water
+  const spd = (p.speed + (p.speedBonus||0) + (p.adrenalineTimer>0?1.5:0)) * infPenalty * sprintMult * jockeySlow * waterSlow * (dt/16.67);
   let dx=0, dy=0;
   if (G.keys['KeyW']||G.keys['ArrowUp'])    dy-=1;
   if (G.keys['KeyS']||G.keys['ArrowDown'])  dy+=1;
@@ -2509,7 +2582,7 @@ function updateWeather(dt) {
   G.weatherTimer-=dt;
   if (G.weatherTimer<=0) {
     G.weather=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];
-    G.weatherTimer=30000+Math.random()*60000;
+    G.weatherTimer=120000+Math.random()*180000; // 2–5 minutes between changes
     document.getElementById('weather-icon').textContent=G.weather.icon;
     document.getElementById('weather-text').textContent=G.weather.name;
   }
@@ -3136,6 +3209,8 @@ function drawPlayer() {
     ctx.fillStyle='rgba(255,230,80,0.9)'; ctx.beginPath(); ctx.arc(33,0,5,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(33,0,2,0,Math.PI*2); ctx.fill();
     ctx.restore();
+    // Store muzzle flash world position for area light
+    G._muzzleFlash = { x: G.player.x + Math.cos(facing)*33, y: G.player.y + Math.sin(facing)*33, born: performance.now() };
   }
   ctx.restore(); // end gun arm rotation
 
@@ -3169,14 +3244,46 @@ function drawPlayer() {
       const sx2 = G.meleeFlash.x - G.cam.x;
       const sy2 = G.meleeFlash.y - G.cam.y;
       ctx.save();
-      ctx.globalAlpha = alpha * 0.85;
-      ctx.strokeStyle = G.meleeFlash.hit > 0 ? '#ff6b35' : '#888';
-      ctx.lineWidth = 4 - t*2;
+
+      // Outer glow sweep
+      ctx.globalAlpha = alpha * 0.35;
+      ctx.strokeStyle = G.meleeFlash.hit > 0 ? '#ff6b35' : '#aaa';
+      ctx.lineWidth = 14 - t*10;
       ctx.shadowColor = G.meleeFlash.hit > 0 ? '#ff6b35' : '#aaa';
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.arc(sx2, sy2, r*1.15, a-1.0, a+1.0);
+      ctx.stroke();
+
+      // Main arc
+      ctx.globalAlpha = alpha * 0.9;
+      ctx.strokeStyle = G.meleeFlash.hit > 0 ? '#ff9f43' : '#ccc';
+      ctx.lineWidth = 4 - t*3;
+      ctx.shadowBlur = 10;
       ctx.beginPath();
       ctx.arc(sx2, sy2, r, a-0.9, a+0.9);
       ctx.stroke();
+
+      // Leading edge spark
+      if (t < 0.4) {
+        const sparkA = a + 0.9;
+        const sx3 = sx2 + Math.cos(sparkA)*r;
+        const sy3 = sy2 + Math.sin(sparkA)*r;
+        ctx.globalAlpha = (0.4-t)/0.4;
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = '#fff'; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(sx3, sy3, 4-t*8, 0, Math.PI*2); ctx.fill();
+      }
+
+      // Impact flash on hit
+      if (G.meleeFlash.hit > 0 && t < 0.25) {
+        ctx.globalAlpha = (0.25-t)/0.25 * 0.6;
+        ctx.fillStyle = '#ff6b35';
+        ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 30;
+        ctx.beginPath(); ctx.arc(sx2+Math.cos(a)*r*0.7, sy2+Math.sin(a)*r*0.7, 18*(1-t), 0, Math.PI*2); ctx.fill();
+      }
+
+      ctx.shadowBlur = 0;
       ctx.restore();
     } else {
       G.meleeFlash = null;
@@ -3608,18 +3715,44 @@ function drawCampfireCompass() {
 
 function drawRain() {
   if (!G.weather.rain) return;
-  // At night, rain should appear dark (not bright) — draw with multiply-like effect
+  const isBlizzard = G.weather.name === 'Blizzard';
   const isNight = G.phase === 'night';
-  ctx.strokeStyle = isNight ? 'rgba(80,100,140,0.5)' : 'rgba(150,200,255,0.35)';
-  ctx.lineWidth = 1;
-  G.rainDrops.forEach(r => {
-    const sx=r.x-G.cam.x, sy=r.y-G.cam.y;
-    ctx.globalAlpha = isNight ? r.alpha*0.6 : r.alpha;
-    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+G.weather.wind*2,sy+r.len); ctx.stroke();
-    r.y+=r.speed; r.x+=G.weather.wind;
-    if (r.y>G.cam.y+canvas.height+20) { r.y=G.cam.y-10; r.x=G.cam.x+Math.random()*canvas.width; }
-  });
-  ctx.globalAlpha=1;
+
+  if (isBlizzard) {
+    // Snow — white dots drifting sideways
+    ctx.fillStyle = 'rgba(220,235,255,0.7)';
+    G.rainDrops.forEach(r => {
+      const sx=r.x-G.cam.x, sy=r.y-G.cam.y;
+      ctx.globalAlpha = r.alpha * 0.8;
+      const sz = 1.5 + (r.len/14)*2; // vary size
+      ctx.beginPath(); ctx.arc(sx, sy, sz, 0, Math.PI*2); ctx.fill();
+      r.y += r.speed * 0.4; // fall slowly
+      r.x += G.weather.wind * 3 + Math.sin(r.y*0.05)*0.5; // drift
+      if (r.y > G.cam.y+canvas.height+20 || r.x > G.cam.x+canvas.width+40) {
+        r.y = G.cam.y - 10; r.x = G.cam.x + Math.random()*canvas.width;
+      }
+    });
+    ctx.globalAlpha = 1;
+    // Frost vignette
+    const frost = ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.3, canvas.width/2,canvas.height/2,canvas.height*0.8);
+    frost.addColorStop(0, 'rgba(180,210,255,0)');
+    frost.addColorStop(1, 'rgba(180,210,255,0.18)');
+    ctx.fillStyle = frost; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Slight white overlay for whiteout feel
+    ctx.fillStyle = 'rgba(220,235,255,0.07)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  } else {
+    // Rain
+    ctx.strokeStyle = isNight ? 'rgba(80,100,140,0.5)' : 'rgba(150,200,255,0.35)';
+    ctx.lineWidth = 1;
+    G.rainDrops.forEach(r => {
+      const sx=r.x-G.cam.x, sy=r.y-G.cam.y;
+      ctx.globalAlpha = isNight ? r.alpha*0.6 : r.alpha;
+      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+G.weather.wind*2,sy+r.len); ctx.stroke();
+      r.y+=r.speed; r.x+=G.weather.wind;
+      if (r.y>G.cam.y+canvas.height+20) { r.y=G.cam.y-10; r.x=G.cam.x+Math.random()*canvas.width; }
+    });
+    ctx.globalAlpha=1;
+  }
 }
 
 function drawNightOverlay() {
@@ -3731,6 +3864,25 @@ function drawNightOverlay() {
   ctx.fillStyle = warmFire;
   ctx.beginPath(); ctx.arc(fcx,fcy,lightR*0.7,0,Math.PI*2); ctx.fill();
 
+  // Muzzle flash area light (very brief, punches through darkness)
+  if (G._muzzleFlash) {
+    const mAge = performance.now() - G._muzzleFlash.born;
+    const mDur = 60;
+    if (mAge < mDur) {
+      const mt = 1 - mAge/mDur;
+      const mx2 = G._muzzleFlash.x - G.cam.x;
+      const my2 = G._muzzleFlash.y - G.cam.y;
+      const mGrad = dc.createRadialGradient(mx2,my2,0, mx2,my2,120*mt);
+      mGrad.addColorStop(0, `rgba(255,230,100,${0.9*mt})`);
+      mGrad.addColorStop(0.4, `rgba(255,200,80,${0.5*mt})`);
+      mGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      dc.fillStyle = mGrad;
+      dc.beginPath(); dc.arc(mx2,my2,120*mt,0,Math.PI*2); dc.fill();
+    } else {
+      G._muzzleFlash = null;
+    }
+  }
+
   // NV green tint + scanlines
   if (G.nightVisionActive) {
     ctx.fillStyle='rgba(0,255,0,0.05)'; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -3799,6 +3951,54 @@ function drawInfectionWarning() {
   ctx.fillText('☣ FULLY INFECTED', canvas.width/2, canvas.height/2-76);
   ctx.fillStyle='#fff'; ctx.font='13px Rajdhani,sans-serif';
   ctx.fillText('Get the CURE from the shop! '+t+'s', canvas.width/2, canvas.height/2-56);
+}
+
+function drawQuickUseHUD() {
+  if (!G.player || !G.running) return;
+  const inv = G.player.inventory;
+  const items = [
+    { key:'G', icon:'💥', count:inv.grenade||0,  label:'Grenade' },
+    { key:'M', icon:'💣', count:inv.mine||0,     label:'Mine'    },
+    { key:'X', icon:'🍾', count:inv.molotov||0,  label:'Molotov' },
+    { key:'C', icon:'✈',  count:inv.airstrike||0,label:'Strike'  },
+    { key:'B', icon:'🧱', count:inv.barricade||0, label:'Barricade'},
+    { key:'T', icon:'🗼', count:inv.turret||0,   label:'Turret'  },
+    { key:'V', icon:'⚔',  count:-1,              label:'Melee'   },
+  ];
+  const slotW = 44, slotH = 44, gap = 4;
+  const total = items.length;
+  const startX = canvas.width - (slotW+gap)*total - 10;
+  const startY = canvas.height - 160;
+
+  items.forEach((item, i) => {
+    const x = startX + i*(slotW+gap);
+    const y = startY;
+    const hasItem = item.count !== 0;
+
+    ctx.globalAlpha = hasItem ? 0.92 : 0.35;
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.beginPath(); ctx.roundRect(x,y,slotW,slotH,6); ctx.fill();
+    ctx.strokeStyle = hasItem ? 'rgba(241,196,15,0.5)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(x,y,slotW,slotH,6); ctx.stroke();
+
+    // Icon
+    ctx.font = '18px serif'; ctx.textAlign = 'center';
+    ctx.fillText(item.icon, x+slotW/2, y+22);
+
+    // Count badge
+    if (item.count > 0) {
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 10px Orbitron,sans-serif';
+      ctx.fillText(item.count, x+slotW-8, y+12);
+    }
+
+    // Key label
+    ctx.fillStyle = hasItem ? '#f1c40f' : '#555';
+    ctx.font = 'bold 9px Orbitron,sans-serif';
+    ctx.fillText('['+item.key+']', x+slotW/2, y+slotH-4);
+  });
+  ctx.globalAlpha = 1;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4360,6 +4560,7 @@ function gameLoop(ts) {
   drawDownedOverlay();
   drawCampfireCompass();
   drawInfectionWarning();
+  drawQuickUseHUD();
 
   } catch(e) {
     console.error('gameLoop error:', e);
