@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Night Siege — Wave Survival</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-left">
+      <div class="bar-row">
+        <span class="bar-label">HP</span>
+        <div class="bar-track"><div id="health-fill" class="bar-fill green"></div></div>
+        <span class="bar-val" id="health-text">100</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label" style="color:#b44fff">☣</span>
+        <div class="bar-track"><div id="infection-fill" class="bar-fill purple"></div></div>
+        <span class="bar-val" id="infection-text">0%</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label" style="color:#f39c12">⚡</span>
+        <div class="bar-track"><div id="stamina-fill" class="bar-fill" style="background:linear-gradient(90deg,#e67e22,#f39c12);width:100%"></div></div>
+        <span class="bar-val" id="stamina-text">100%</span>
+      </div>
+      <div id="ammo-block">
+        <span id="ammo-cur">12</span><span id="ammo-sep">/</span><span id="ammo-max">12</span>
+        <span id="ammo-reserve-label" style="color:#555;margin:0 5px;font-size:14px">|</span><span id="ammo-reserve" style="font-size:14px;color:#888;font-family:'Orbitron',sans-serif">48</span>
+        <span id="gun-name-hud">Pistol</span>
+        <span id="low-ammo-warn">LOW AMMO</span>
+      </div>
+    </div>
+    <div id="hud-center">
+      <div id="wave-badge">WAVE <span id="wave-num">1</span></div>
+      <div id="phase-badge" class="day">☀ DAY PHASE</div>
+      <div id="timer-badge"><span id="timer-text">60s</span></div>
+      <div id="weather-badge"><span id="weather-icon">☀</span> <span id="weather-text">Clear</span></div>
+    </div>
+    <div id="hud-right">
+      <div id="money-hud">💰 <span id="money-text">0</span></div>
+      <div id="kills-hud">💀 <span id="kills-text">0</span></div>
+      <div class="bar-row" style="justify-content:flex-end">
+        <span class="bar-label">BASE</span>
+        <div class="bar-track"><div id="base-fill" class="bar-fill blue"></div></div>
+        <span class="bar-val" id="base-text">500</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div id="toolbar" class="hidden">
+    <div class="tool-slot active" id="slot-0" data-slot="0"><canvas class="gun-canvas" id="gc-0" width="48" height="28"></canvas><div class="slot-name">Pistol</div><div class="slot-key">1</div></div>
+    <div class="tool-slot" id="slot-1" data-slot="1"><canvas class="gun-canvas" id="gc-1" width="48" height="28"></canvas><div class="slot-name">Empty</div><div class="slot-key">2</div></div>
+    <div class="tool-slot" id="slot-2" data-slot="2"><canvas class="gun-canvas" id="gc-2" width="48" height="28"></canvas><div class="slot-name">Empty</div><div class="slot-key">3</div></div>
+    <div class="tool-slot" id="slot-3" data-slot="3"><canvas class="gun-canvas" id="gc-3" width="48" height="28"></canvas><div class="slot-name">Empty</div><div class="slot-key">4</div></div>
+    <div class="tool-slot" id="slot-4" data-slot="4"><canvas class="gun-canvas" id="gc-4" width="48" height="28"></canvas><div class="slot-name">Empty</div><div class="slot-key">5</div></div>
+  </div>
+
+  <!-- Side buttons -->
+  <div id="side-btns" class="hidden">
+    <button id="nv-btn" title="Night Vision [N]">👁 NV</button>
+    <button id="skip-btn" title="Skip to Night">🌙 Skip Night</button>
+    <button id="shop-btn" title="Open Shop [Tab]">🛒 Shop</button>
+    <div id="battery-display" title="Flashlight Battery [F]">
+      🔦 <div id="battery-bar-track"><div id="battery-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Day Shop -->
+  <div id="shop-overlay" class="hidden">
+    <div id="shop-panel">
+      <div id="shop-header">
+        <div id="shop-header-text">
+          <h2>🛒 SUPPLY DEPOT</h2>
+          <p id="shop-sub">Wave <span id="shop-wave">1</span> — Night begins in <span id="shop-timer">60</span>s</p>
+        </div>
+        <div id="shop-timer-ring">
+          <svg id="shop-timer-svg" width="56" height="56" viewBox="0 0 56 56">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+            <circle id="shop-timer-arc" cx="28" cy="28" r="22" fill="none" stroke="#f1c40f" stroke-width="4"
+              stroke-dasharray="138.2" stroke-dashoffset="0" stroke-linecap="round"
+              transform="rotate(-90 28 28)"/>
+            <text x="28" y="33" text-anchor="middle" fill="#f1c40f" font-size="12" font-family="Orbitron,sans-serif" id="shop-timer-text-svg">60</text>
+          </svg>
+        </div>
+        <div id="shop-money">💰 <span id="shop-money-val">0</span></div>
+      </div>
+      <div id="shop-tabs">
+        <button class="stab active" data-tab="weapons">⚔ Weapons</button>
+        <button class="stab" data-tab="gear">🎒 Gear</button>
+        <button class="stab" data-tab="services">🔧 Services</button>
+      </div>
+      <div id="shop-items"></div>
+      <div id="shop-footer">
+        <button id="shop-dismiss">✕ Close Shop</button>
+        <button id="shop-close">🌙 Start Night</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boss Warning -->
+  <div id="boss-warning" class="hidden">⚠ BOSS INCOMING ⚠</div>
+
+  <!-- Wave Clear Banner -->
+  <div id="wave-clear-banner" class="hidden">WAVE CLEAR!</div>
+
+  <!-- Zombie type announcement -->
+  <div id="zombie-type-announce" class="hidden"></div>
+
+  <!-- Game Over -->
+  <div id="game-over" class="hidden">
+    <div id="go-panel">
+      <div id="go-skull">💀</div>
+      <h1 id="go-title">GAME OVER</h1>
+      <p id="go-sub"></p>
+      <div id="go-stats"></div>
+      <div id="go-perk-note">You earned <span id="go-perk-coins">0</span> perk coins!</div>
+      <div id="go-btns">
+        <button id="go-perks-btn">🏆 Spend Perks</button>
+        <button id="go-restart-btn">↺ Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Menu -->
+  <div id="main-menu">
+    <canvas id="mm-bg-canvas"></canvas>
+    <div id="mm-content">
+      <div id="mm-logo">
+        <div id="mm-title">NIGHT SIEGE</div>
+        <div id="mm-tagline">Survive the horde. Defend the base.</div>
+      </div>
+      <div id="mm-nav">
+        <button class="mm-btn primary" id="mm-play">▶ NEW GAME</button>
+        <button class="mm-btn primary" id="mm-continue" style="display:none">▶ CONTINUE</button>
+        <button class="mm-btn" id="mm-perks-btn">🏆 PERKS</button>
+        <button class="mm-btn" id="mm-how">📖 HOW TO PLAY</button>
+      </div>
+      <div id="mm-perk-coins-display">🪙 <span id="mm-coins">0</span> Perk Coins</div>
+      <div id="mm-footer">
+        <a id="mm-privacy" href="#">Privacy Policy</a>
+        <span id="mm-version">v1.0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Perks Screen -->
+  <div id="perks-screen" class="hidden">
+    <div id="perks-panel" style="width:900px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div id="perks-header">
+        <h2>� SKILL TREE</h2>
+        <div id="perks-coins-display">🪙 <span id="perks-coins">0</span> coins</div>
+        <button id="perks-back">✕ Close</button>
+      </div>
+      <div id="perks-tree-container" style="flex:1;overflow:auto;position:relative;">
+        <canvas id="skill-tree-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- How To Play -->
+  <div id="howto-screen" class="hidden">
+    <div id="howto-panel">
+      <h2>📖 HOW TO PLAY</h2>
+      <div id="howto-content">
+        <div class="howto-section"><h3>🎮 Controls</h3>
+          <div class="howto-grid">
+            <span>WASD / Arrows</span><span>Move</span>
+            <span>Mouse</span><span>Aim</span>
+            <span>Left Click / Hold</span><span>Shoot</span>
+            <span>1–5 / Scroll</span><span>Switch weapon slot</span>
+            <span>R</span><span>Reload</span>
+            <span>N</span><span>Toggle Night Vision</span>
+            <span>F</span><span>Place Mine</span>
+            <span>G</span><span>Throw Grenade</span>
+            <span>E</span><span>Use Med Kit</span>
+            <span>Q</span><span>Use Antidote</span>
+            <span>T</span><span>Place Turret</span>
+            <span>B</span><span>Place Barricade</span>
+            <span>Tab</span><span>Open Shop (day)</span>
+            <span>Escape</span><span>Pause</span>
+          </div>
+        </div>
+        <div class="howto-section"><h3>🌙 Phases</h3>
+          <p><b>Day Phase:</b> 60 seconds to buy gear. Shop stays open — you can keep buying until you skip or the timer runs out.</p>
+          <p><b>Night Phase:</b> Zombies spawn. Kill them all to advance. Every 5 waves a Boss appears mid-wave.</p>
+        </div>
+        <div class="howto-section"><h3>☣ Infection</h3>
+          <p>Infected zombies and Spitter acid raise your infection meter. Above 50% it drains HP. Use Antidote (Q) to clear it.</p>
+        </div>
+        <div class="howto-section"><h3>🪙 Perk Coins</h3>
+          <p>Earned by dying at higher waves. Spend them in the Perks menu for permanent upgrades across all runs.</p>
+        </div>
+      </div>
+      <button id="howto-back">← Back</button>
+    </div>
+  </div>
+
+  <!-- Privacy Policy -->
+  <div id="privacy-screen" class="hidden">
+    <div id="privacy-panel">
+      <h2>🔒 Privacy Policy</h2>
+      <div id="privacy-content">
+        <p><b>Last updated:</b> April 2026</p>
+        <h3>1. Overview</h3>
+        <p>Night Siege is a browser-based game. We are committed to protecting your privacy.</p>
+        <h3>2. Data We Collect</h3>
+        <p>Night Siege does <b>not</b> collect, transmit, or store any personal data on external servers. All game progress is stored locally in your browser using <code>localStorage</code>.</p>
+        <h3>3. Local Storage</h3>
+        <p>We use <code>localStorage</code> to save your perk coins and purchased perks between sessions. This data never leaves your device.</p>
+        <h3>4. Third-Party Services</h3>
+        <p>The Game loads fonts from Google Fonts. No other third-party services are used.</p>
+        <h3>5. Cookies</h3>
+        <p>Night Siege does not use cookies.</p>
+        <h3>6. Contact</h3>
+        <p>For questions about this policy, please refer to the game source repository.</p>
+      </div>
+      <button id="privacy-back">← Back</button>
+    </div>
+  </div>
+
+
+  <!-- ── Pause Menu ── -->
+  <div id="pause-menu" class="hidden">
+    <div id="pause-panel">
+      <div id="pause-title">PAUSED</div>
+      <div id="pause-wave-info">Wave <span id="pause-wave-num">1</span> — <span id="pause-phase-label">Day Phase</span></div>
+      <div id="pause-btns">
+        <button id="pause-resume">▶ Resume</button>
+        <button id="pause-shop" class="pause-secondary">🛒 Shop</button>
+        <button id="pause-perks-btn2" class="pause-secondary">🏆 Perks</button>
+        <button id="pause-main-menu" class="pause-danger">⬅ Main Menu</button>
+      </div>
+      <div id="pause-controls">
+        <div class="pc-row"><span>WASD</span><span>Move</span></div>
+        <div class="pc-row"><span>Mouse</span><span>Aim &amp; Shoot</span></div>
+        <div class="pc-row"><span>R</span><span>Reload</span></div>
+        <div class="pc-row"><span>1–5</span><span>Switch weapon</span></div>
+        <div class="pc-row"><span>E / Q</span><span>Med Kit / Antidote</span></div>
+        <div class="pc-row"><span>F / G</span><span>Mine / Grenade</span></div>
+        <div class="pc-row"><span>T / B</span><span>Turret / Barricade</span></div>
+        <div class="pc-row"><span>N</span><span>Night Vision</span></div>
+        <div class="pc-row"><span>Tab</span><span>Shop (day)</span></div>
+        <div class="pc-row"><span>Esc</span><span>Pause</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crosshair -->
+  <div id="crosshair" class="hidden"></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
