@@ -216,7 +216,7 @@ const FORT_TIERS = [
 const NPC_DEFS = {
   sniper_npc: { name:'Hired Sniper',   icon:'🎯', price:800,  color:'#9b59b6', damage:120, range:500, fireRate:2000, hp:80,  desc:'Stays near base, picks off distant zombies' },
   soldier:    { name:'Soldier',        icon:'💂', price:500,  color:'#27ae60', damage:35,  range:280, fireRate:600,  hp:120, desc:'Follows you and fights zombies' },
-  medic:      { name:'Medic',          icon:'⚕',  price:600,  color:'#3498db', damage:15,  range:200, fireRate:1000, hp:100, desc:'Heals you over time when nearby' },
+  medic:      { name:'Medic',          icon:'⚕',  price:600,  color:'#3498db', damage:15,  range:200, fireRate:1000, hp:60,  desc:'Heals you slowly over time when nearby' },
   engineer:   { name:'Engineer',       icon:'🔧', price:700,  color:'#e67e22', damage:20,  range:240, fireRate:800,  hp:90,  desc:'Repairs barricades and turrets' },
   heavy:      { name:'Heavy Gunner',   icon:'💪', price:1000, color:'#e74c3c', damage:50,  range:250, fireRate:400,  hp:200, desc:'Slow but tanky, draws zombie attention' },
 };
@@ -301,6 +301,12 @@ const SKILL_TREE = [
     effect:(p,l)=>{ p.berserker=l; } },
   { id:'adrenaline',name:'Adrenaline',       icon:'💉', desc:'Speed burst on kill',     maxLevel:2, cost:6, x:4, y:4, requires:'infection', branch:'survival', color:'#27ae60',
     effect:(p,l)=>{ p.adrenaline=l; } },
+  { id:'endurance', name:'Endurance',        icon:'⚡', desc:'+25 max stamina/level',    maxLevel:4, cost:3, x:2, y:1, requires:'root',      branch:'survival', color:'#2ecc71',
+    effect:(p,l)=>{ p.maxStamina=100+l*25; } },
+  { id:'sprint_eff',name:'Sprint Efficiency',icon:'🏃', desc:'-20% stamina drain/level', maxLevel:3, cost:4, x:2, y:2, requires:'endurance', branch:'survival', color:'#27ae60',
+    effect:(p,l)=>{ p.sprintDrainMult=1-l*0.2; } },
+  { id:'quick_regen',name:'Quick Recovery',  icon:'💨', desc:'+30% stamina regen/level', maxLevel:3, cost:4, x:1, y:3, requires:'sprint_eff',branch:'survival', color:'#27ae60',
+    effect:(p,l)=>{ p.staminaRegenMult=1+l*0.3; } },
 
   // ══ TECH BRANCH (center-right) ══
   { id:'fl_battery',name:'Extended Battery', icon:'🔋', desc:'+30s flashlight life/lvl',maxLevel:4, cost:3, x:5, y:1, requires:'root',      branch:'tech', color:'#3498db',
@@ -396,6 +402,8 @@ _loadSound('pause_in',       'sounds/pause_game.mp3',                     false,
 _loadSound('pause_out',      'sounds/unpause_game.mp3',                   false, 0.5);
 _loadSound('lightning',      'sounds/lightningsound.mp3',                 false, 0.4);
 _loadSound('walk_water',     'sounds/walk_in_water.mp3',                  false, 0.4);
+_loadSound('step_grass',     'sounds/grass-step.ogg',                      false, 0.35);
+_loadSound('step_concrete',  'sounds/concrete-step.ogg',                   false, 0.35);
 
 // ── Ambient loops ──
 _loadSound('day_amb',       'sounds/day_ambience.mp3',          true,  0.25);
@@ -689,6 +697,7 @@ function buildPlayerFromPerks() {
     downed: false, downedTimer: 0, infectionDeathTimer: 0,
     lastMelee: 0,
     stamina: 100, maxStamina: 100, sprinting: false,
+    sprintDrainMult: 1, staminaRegenMult: 1,
     // skill tree stats (defaults)
     dmgMult:1, fireRateMult:1, reloadMult:1, rangeMult:1, spreadMult:1,
     explosiveRounds:0, regenRate:0, vampireHeal:0, berserker:0,
@@ -1833,7 +1842,16 @@ function toggleNightVision() {
   }
   G.nightVisionActive = !G.nightVisionActive;
   document.getElementById('nv-btn').classList.toggle('active', G.nightVisionActive);
-  playSound('night_vision');
+  // Different pitch for on vs off to simulate reversed sound
+  const src = SFX['night_vision'];
+  if (src && _audioUnlocked) {
+    try {
+      const clone = src.cloneNode();
+      clone.volume = src.volume;
+      clone.playbackRate = G.nightVisionActive ? 1.0 : 0.65; // lower pitch = "powering down"
+      clone.play().catch(()=>{});
+    } catch(e) {}
+  }
 }
 
 function toggleFlashlight() {
@@ -1890,7 +1908,7 @@ function placeBarricade() {
   G.player.inventory.barricade--;
   const angle = G.player.facing;
   const dist = 30;
-  G.barricades.push({ x:G.player.x+Math.cos(angle)*dist, y:G.player.y+Math.sin(angle)*dist, hp:100, maxHp:100 });
+  G.barricades.push({ x:G.player.x+Math.cos(angle)*dist, y:G.player.y+Math.sin(angle)*dist, hp:100, maxHp:100, angle:angle });
   addFloatingText('Barricade placed!', G.player.x-G.cam.x, G.player.y-G.cam.y-30, '#8B4513');
 }
 
@@ -2044,9 +2062,11 @@ function movePlayer(dt) {
                    G.keys['ArrowUp']||G.keys['ArrowDown']||G.keys['ArrowLeft']||G.keys['ArrowRight'];
   p.sprinting = wantSprint && isMoving;
   if (p.sprinting) {
-    p.stamina = Math.max(0, p.stamina - dt * 0.025); // slow drain = much longer sprint
+    const drainMult = p.sprintDrainMult || 1;
+    p.stamina = Math.max(0, p.stamina - dt * 0.025 * drainMult);
   } else {
-    p.stamina = Math.min(p.maxStamina, p.stamina + dt * 0.02); // steady regen
+    const regenMult = p.staminaRegenMult || 1;
+    p.stamina = Math.min(p.maxStamina, p.stamina + dt * 0.02 * regenMult);
   }
 
   const infPenalty = p.infection >= 50 ? 1 - (p.infection-50)/100 * 0.5 : 1;
@@ -2057,7 +2077,24 @@ function movePlayer(dt) {
   const waterSlow = inWater ? 0.45 : 1;
   if (inWater && isMoving && Math.random()<0.15) spawnParticles(p.x,p.y,'#4a9eff',2,1.5);
   if (inWater && isMoving && Math.random()<0.04) playSound('walk_water', 0.15);
-  const sprintMult = (p.sprinting && !inWater) ? 1.85 : 1; // can't sprint in water
+
+  // Footstep sounds
+  if (isMoving) {
+    const stepInterval = p.sprinting ? 280 : 480; // faster cadence when sprinting
+    if (!p._lastStep) p._lastStep = 0;
+    const now2 = performance.now();
+    if (now2 - p._lastStep > stepInterval) {
+      p._lastStep = now2;
+      if (!inWater) {
+        const tile = (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)];
+        const sfx = (tile==='road'||tile==='building') ? 'step_concrete' : 'step_grass';
+        // Subtle pitch variance for natural feel
+        const pitchVar = p.sprinting ? 0.18 : 0.12;
+        playSound(sfx, pitchVar);
+      }
+    }
+  }
+  const sprintMult = (p.sprinting) ? 1.85 : 1; // can sprint in water, just slower overall
   const spd = (p.speed + (p.speedBonus||0) + (p.adrenalineTimer>0?1.5:0)) * infPenalty * sprintMult * jockeySlow * waterSlow * (dt/16.67);
   let dx=0, dy=0;
   if (G.keys['KeyW']||G.keys['ArrowUp'])    dy-=1;
@@ -2069,8 +2106,8 @@ function movePlayer(dt) {
   p.facing = Math.atan2(G.mouse.y-(p.y-G.cam.y), G.mouse.x-(p.x-G.cam.x));
 
   const nx = p.x+dx*spd, ny = p.y+dy*spd;
-  if (!isSolidWorld(nx,p.y)&&!isSolidBarricade(nx,p.y)&&!isFortWall(nx,p.y)&&nx>TILE&&nx<(MAP_W-1)*TILE) p.x=nx;
-  if (!isSolidWorld(p.x,ny)&&!isSolidBarricade(p.x,ny)&&!isFortWall(p.x,ny)&&ny>TILE&&ny<(MAP_H-1)*TILE) p.y=ny;
+  if (!isSolidWorld(nx,p.y)&&!isFortWall(nx,p.y)&&nx>TILE&&nx<(MAP_W-1)*TILE) p.x=nx;
+  if (!isSolidWorld(p.x,ny)&&!isFortWall(p.x,ny)&&ny>TILE&&ny<(MAP_H-1)*TILE) p.y=ny;
 
   if (p.regenRate>0 && performance.now()-G.lastDamageTime>3000) {
     p.hp = Math.min(p.maxHp, p.hp + p.regenRate*(dt/1000));
@@ -2262,15 +2299,15 @@ function moveZombies(dt) {
     // Attack base
     if (dBase<z.size+62&&now-z.lastAttack>1000) {
       z.lastAttack=now;
-      // Upgraded fort (level 1+) is invincible
-      if (G.fortLevel === 0) {
+      // Fort with walls (level 2+) is invincible — only show message occasionally
+      if (G.fortLevel >= 2) {
+        spawnParticles(bCX,bCY,'#f1c40f',4,3);
+        if (Math.random() < 0.15) addFloatingText('FORT PROTECTED!', bCX-G.cam.x, bCY-G.cam.y-30, '#f1c40f');
+      } else {
+        // Level 0 or 1 — fort takes damage
         G.base.hp=Math.max(0,G.base.hp-z.damage);
         spawnParticles(bCX,bCY,'#e74c3c',3,3); updateHUD();
         if (G.base.hp<=0) triggerGameOver('base');
-      } else {
-        // Fort upgraded — deflect attack with sparks
-        spawnParticles(bCX,bCY,'#f1c40f',4,3);
-        addFloatingText('FORT PROTECTED!', bCX-G.cam.x, bCY-G.cam.y-30, '#f1c40f');
       }
     }
 
@@ -2463,11 +2500,22 @@ function updateProjectiles() {
     const p=G.projectiles[i];
     p.x+=p.vx; p.y+=p.vy;
     if (p.type==='grenade') {
-      if (now-p.born>2000||isSolidWorld(p.x,p.y)) { explode(p.x,p.y,120,80,'player'); G.projectiles.splice(i,1); }
+      // Explode on wall/solid hit, on zombie hit, or after 2s
+      let hitZombie = false;
+      for (const z of G.zombies) {
+        if (Math.hypot(z.x-p.x, z.y-p.y) < z.size+6) { hitZombie=true; break; }
+      }
+      if (now-p.born>2000 || isSolidWorld(p.x,p.y) || hitZombie) {
+        explode(p.x,p.y,120,80,'player'); G.projectiles.splice(i,1);
+      }
     } else if (p.type==='molotov') {
-      if (now-p.born>1800||isSolidWorld(p.x,p.y)) {
+      // Detonate on wall/solid hit, on zombie hit, or after 1.8s
+      let hitZombie = false;
+      for (const z of G.zombies) {
+        if (Math.hypot(z.x-p.x, z.y-p.y) < z.size+6) { hitZombie=true; break; }
+      }
+      if (now-p.born>1800 || isSolidWorld(p.x,p.y) || hitZombie) {
         playSound('molotov', 0.1);
-        // Spawn fire patches
         for (let f=0;f<5;f++) {
           const fx=p.x+(Math.random()-0.5)*50, fy=p.y+(Math.random()-0.5)*50;
           G.projectiles.push({ x:fx, y:fy, vx:0, vy:0, type:'fire', born:now, owner:'player', life:4000 });
@@ -2505,7 +2553,10 @@ function updateMines(dt) {
     if (!m.armed) continue;
     for (let j=G.zombies.length-1;j>=0;j--) {
       if (Math.hypot(G.zombies[j].x-m.x,G.zombies[j].y-m.y)<22) {
-        explode(m.x,m.y,100,70,'player'); G.mines.splice(i,1); break;
+        explode(m.x,m.y,100,70,'player');
+        spawnParticles(m.x,m.y,'#ff6b35',20,7);
+        spawnParticles(m.x,m.y,'#f1c40f',12,5);
+        G.mines.splice(i,1); break;
       }
     }
   }
@@ -2562,7 +2613,7 @@ function updateNPCs(dt) {
     if (npc.type === 'medic') {
       const d = Math.hypot(npc.x-G.player.x, npc.y-G.player.y);
       if (d < 80 && G.player.hp < G.player.maxHp) {
-        G.player.hp = Math.min(G.player.maxHp, G.player.hp + 0.02*dt);
+        G.player.hp = Math.min(G.player.maxHp, G.player.hp + 0.005*dt); // nerfed: ~0.5 HP/s
         updateHUD();
       }
     }
@@ -2801,6 +2852,8 @@ function updateDayTimer(dt) {
   if (G.dayTimer<=0) { document.getElementById('shop-overlay').classList.add('hidden'); startNightWave(); }
   document.getElementById('timer-text').textContent=Math.ceil(Math.max(0,G.dayTimer))+'s';
   if (G.shopOpen) document.getElementById('shop-timer').textContent=Math.ceil(Math.max(0,G.dayTimer));
+  // Sunset tint when 20s left — store as G._sunsetStrength for drawDayAtmosphere
+  G._sunsetStrength = G.dayTimer <= 20 ? (20 - G.dayTimer) / 20 : 0;
 }
 
 function updateNightTimer(dt) {
@@ -3771,19 +3824,23 @@ function drawTurrets() {
 function drawBarricades() {
   G.barricades.forEach(b => {
     const sx=b.x-G.cam.x, sy=b.y-G.cam.y;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(b.angle || 0);
     // Shadow
-    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(sx-16,sy-6,32,14);
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(-16,-6,32,14);
     // Planks
     ctx.fillStyle='#8B4513';
-    ctx.fillRect(sx-15,sy-7,30,14);
+    ctx.fillRect(-15,-7,30,14);
     // Wood grain
     ctx.strokeStyle='#5D2E0C'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(sx-15,sy-3); ctx.lineTo(sx+15,sy-3); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(sx-15,sy+3); ctx.lineTo(sx+15,sy+3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-15,-3); ctx.lineTo(15,-3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-15,3); ctx.lineTo(15,3); ctx.stroke();
     // Nails
     ctx.fillStyle='#aaa';
-    ctx.fillRect(sx-12,sy-1,3,3); ctx.fillRect(sx+9,sy-1,3,3);
-    // HP bar
+    ctx.fillRect(-12,-1,3,3); ctx.fillRect(9,-1,3,3);
+    ctx.restore();
+    // HP bar (always upright)
     const hpPct=b.hp/b.maxHp;
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(sx-15,sy-14,30,4);
     ctx.fillStyle='#f39c12'; ctx.fillRect(sx-15,sy-14,30*hpPct,4);
@@ -4107,14 +4164,26 @@ function drawDayAtmosphere() {
   if (G.weather.fog>0) {
     ctx.fillStyle=`rgba(220,220,230,${G.weather.fog*0.45*sb})`; ctx.fillRect(0,0,canvas.width,canvas.height);
   }
-  // Sunrise/sunset glow during transition
-  const transitionStrength = 1 - Math.abs(sb - 0.5) * 2; // peaks at sb=0.5
+  // Sunrise/sunset glow during sky transition
+  const transitionStrength = 1 - Math.abs(sb - 0.5) * 2;
   if (transitionStrength > 0.05) {
     const grad = ctx.createLinearGradient(0, canvas.height*0.6, 0, canvas.height);
     grad.addColorStop(0, `rgba(255,120,30,${transitionStrength*0.18})`);
     grad.addColorStop(1, `rgba(255,60,0,0)`);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  // Sunset orange tint when day timer < 20s
+  const ss = G._sunsetStrength || 0;
+  if (ss > 0) {
+    // Warm orange wash
+    ctx.fillStyle = `rgba(255,100,20,${ss * 0.22})`; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Horizon glow
+    const hGrad = ctx.createLinearGradient(0, canvas.height*0.5, 0, canvas.height);
+    hGrad.addColorStop(0, `rgba(255,80,0,${ss*0.28})`);
+    hGrad.addColorStop(1, `rgba(180,40,0,0)`);
+    ctx.fillStyle = hGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Darken sky slightly
+    ctx.fillStyle = `rgba(20,0,0,${ss * 0.12})`; ctx.fillRect(0,0,canvas.width,canvas.height);
   }
 }
 
