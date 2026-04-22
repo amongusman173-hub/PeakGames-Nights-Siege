@@ -1602,9 +1602,9 @@ function movePlayer(dt) {
                    G.keys['ArrowUp']||G.keys['ArrowDown']||G.keys['ArrowLeft']||G.keys['ArrowRight'];
   p.sprinting = wantSprint && isMoving;
   if (p.sprinting) {
-    p.stamina = Math.max(0, p.stamina - dt * 0.06); // slightly slower drain = longer sprint
+    p.stamina = Math.max(0, p.stamina - dt * 0.025); // slow drain = much longer sprint
   } else {
-    p.stamina = Math.min(p.maxStamina, p.stamina + dt * 0.025);
+    p.stamina = Math.min(p.maxStamina, p.stamina + dt * 0.02); // steady regen
   }
 
   const infPenalty = p.infection >= 50 ? 1 - (p.infection-50)/100 * 0.5 : 1;
