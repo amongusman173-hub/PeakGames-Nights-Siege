@@ -39,23 +39,23 @@ const BASE_Y = Math.floor(MAP_H / 2);
 // ── Weapon Definitions ─────────────────────────────────────────
 // drawFn: function(ctx, w, h) draws the gun clipart
 const WEAPONS = {
-  pistol:       { name:'Pistol',        damage:25,  fireRate:400,  range:350, spread:0.05, ammo:12,  maxAmmo:12,  reloadTime:1200, bulletSize:5,  speed:10, auto:false, price:0,    color:'#f1c40f', reserveAmmo:48,  maxReserve:96,  draw(c,w,h){drawPistol(c,w,h);} },
-  shotgun:      { name:'Shotgun',       damage:20,  fireRate:900,  range:250, spread:0.25, ammo:6,   maxAmmo:6,   reloadTime:2000, bulletSize:7,  speed:9,  auto:false, pellets:6, price:300,  color:'#e67e22', reserveAmmo:24,  maxReserve:48,  draw(c,w,h){drawShotgun(c,w,h);} },
-  smg:          { name:'SMG',           damage:15,  fireRate:110,  range:300, spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:1400, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
-  rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:500, spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:2200, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
-  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:700, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:3000, bulletSize:8,  speed:20, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
-  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:350, spread:0.18, ammo:200, maxAmmo:200, reloadTime:4000, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:400, maxReserve:600, draw(c,w,h){drawMinigun(c,w,h);} },
-  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:180, spread:0.4,  ammo:100, maxAmmo:100, reloadTime:2500, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:200, maxReserve:400, flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
+  pistol:       { name:'Pistol',        damage:25,  fireRate:400,  range:350, spread:0.05, ammo:12,  maxAmmo:12,  reloadTime:3060, bulletSize:5,  speed:10, auto:false, price:0,    color:'#f1c40f', reserveAmmo:48,  maxReserve:96,  draw(c,w,h){drawPistol(c,w,h);} },
+  shotgun:      { name:'Shotgun',       damage:20,  fireRate:900,  range:250, spread:0.25, ammo:6,   maxAmmo:6,   reloadTime:875,  bulletSize:7,  speed:9,  auto:false, pellets:6, price:300,  color:'#e67e22', reserveAmmo:24,  maxReserve:48,  draw(c,w,h){drawShotgun(c,w,h);} },
+  smg:          { name:'SMG',           damage:15,  fireRate:110,  range:300, spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:3700, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
+  rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:500, spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:3700, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
+  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:700, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:7060, bulletSize:8,  speed:20, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
+  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:350, spread:0.18, ammo:200, maxAmmo:200, reloadTime:7060, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:400, maxReserve:600, draw(c,w,h){drawMinigun(c,w,h);} },
+  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:180, spread:0.4,  ammo:100, maxAmmo:100, reloadTime:3700, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:200, maxReserve:400, flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
   // ── New weapons ──
-  revolver:     { name:'Revolver',      damage:70,  fireRate:700,  range:400, spread:0.03, ammo:6,   maxAmmo:6,   reloadTime:2500, bulletSize:6,  speed:14, auto:false, price:600,  color:'#c0392b', reserveAmmo:30,  maxReserve:60,  draw(c,w,h){drawRevolver(c,w,h);} },
-  deagle:       { name:'Desert Eagle',  damage:90,  fireRate:600,  range:420, spread:0.04, ammo:7,   maxAmmo:7,   reloadTime:1800, bulletSize:7,  speed:15, auto:false, price:900,  color:'#f39c12', reserveAmmo:28,  maxReserve:56,  draw(c,w,h){drawDeagle(c,w,h);} },
-  ak47:         { name:'AK-47',         damage:35,  fireRate:130,  range:380, spread:0.09, ammo:30,  maxAmmo:30,  reloadTime:2000, bulletSize:5,  speed:14, auto:true,  price:700,  color:'#e67e22', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawAK47(c,w,h);} },
-  m4:           { name:'M4A1',          damage:30,  fireRate:100,  range:420, spread:0.06, ammo:30,  maxAmmo:30,  reloadTime:1800, bulletSize:5,  speed:15, auto:true,  price:850,  color:'#27ae60', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawM4(c,w,h);} },
-  rpg:          { name:'RPG',           damage:200, fireRate:3000, range:600, spread:0.01, ammo:1,   maxAmmo:1,   reloadTime:4000, bulletSize:12, speed:8,  auto:false, price:2000, color:'#e74c3c', reserveAmmo:3,   maxReserve:6,   explosive:3, draw(c,w,h){drawRPG(c,w,h);} },
-  crossbow:     { name:'Crossbow',      damage:120, fireRate:1200, range:550, spread:0.01, ammo:6,   maxAmmo:6,   reloadTime:2800, bulletSize:6,  speed:18, auto:false, price:1000, color:'#8e44ad', reserveAmmo:18,  maxReserve:36,  draw(c,w,h){drawCrossbow(c,w,h);} },
-  uzi:          { name:'Uzi',           damage:12,  fireRate:80,   range:250, spread:0.15, ammo:32,  maxAmmo:32,  reloadTime:1200, bulletSize:4,  speed:13, auto:true,  price:650,  color:'#16a085', reserveAmmo:96,  maxReserve:192, draw(c,w,h){drawUzi(c,w,h);} },
-  lmg:          { name:'LMG',           damage:22,  fireRate:95,   range:400, spread:0.1,  ammo:100, maxAmmo:100, reloadTime:5000, bulletSize:5,  speed:14, auto:true,  price:1600, color:'#d35400', reserveAmmo:200, maxReserve:400, draw(c,w,h){drawLMG(c,w,h);} },
-  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:800, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:5000, bulletSize:10, speed:30, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  draw(c,w,h){drawRailgun(c,w,h);} },
+  revolver:     { name:'Revolver',      damage:70,  fireRate:700,  range:400, spread:0.03, ammo:6,   maxAmmo:6,   reloadTime:3060, bulletSize:6,  speed:14, auto:false, price:600,  color:'#c0392b', reserveAmmo:30,  maxReserve:60,  draw(c,w,h){drawRevolver(c,w,h);} },
+  deagle:       { name:'Desert Eagle',  damage:90,  fireRate:600,  range:420, spread:0.04, ammo:7,   maxAmmo:7,   reloadTime:3060, bulletSize:7,  speed:15, auto:false, price:900,  color:'#f39c12', reserveAmmo:28,  maxReserve:56,  draw(c,w,h){drawDeagle(c,w,h);} },
+  ak47:         { name:'AK-47',         damage:35,  fireRate:130,  range:380, spread:0.09, ammo:30,  maxAmmo:30,  reloadTime:7060, bulletSize:5,  speed:14, auto:true,  price:700,  color:'#e67e22', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawAK47(c,w,h);} },
+  m4:           { name:'M4A1',          damage:30,  fireRate:100,  range:420, spread:0.06, ammo:30,  maxAmmo:30,  reloadTime:3700, bulletSize:5,  speed:15, auto:true,  price:850,  color:'#27ae60', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawM4(c,w,h);} },
+  rpg:          { name:'RPG',           damage:200, fireRate:3000, range:600, spread:0.01, ammo:1,   maxAmmo:1,   reloadTime:7060, bulletSize:12, speed:8,  auto:false, price:2000, color:'#e74c3c', reserveAmmo:3,   maxReserve:6,   explosive:3, draw(c,w,h){drawRPG(c,w,h);} },
+  crossbow:     { name:'Crossbow',      damage:120, fireRate:1200, range:550, spread:0.01, ammo:6,   maxAmmo:6,   reloadTime:7060, bulletSize:6,  speed:18, auto:false, price:1000, color:'#8e44ad', reserveAmmo:18,  maxReserve:36,  draw(c,w,h){drawCrossbow(c,w,h);} },
+  uzi:          { name:'Uzi',           damage:12,  fireRate:80,   range:250, spread:0.15, ammo:32,  maxAmmo:32,  reloadTime:3060, bulletSize:4,  speed:13, auto:true,  price:650,  color:'#16a085', reserveAmmo:96,  maxReserve:192, draw(c,w,h){drawUzi(c,w,h);} },
+  lmg:          { name:'LMG',           damage:22,  fireRate:95,   range:400, spread:0.1,  ammo:100, maxAmmo:100, reloadTime:3700, bulletSize:5,  speed:14, auto:true,  price:1600, color:'#d35400', reserveAmmo:200, maxReserve:400, draw(c,w,h){drawLMG(c,w,h);} },
+  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:800, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:7060, bulletSize:10, speed:30, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  draw(c,w,h){drawRailgun(c,w,h);} },
 };
 
 // ── Gun Clipart Drawing Functions ──────────────────────────────
@@ -186,6 +186,9 @@ const ITEMS = {
   medkit:     { name:'Med Kit',      icon:'💊', price:200, count:2,  type:'medkit'   },
   antidote:   { name:'Antidote',     icon:'💉', price:300, count:1,  type:'antidote' },
   nightvision:{ name:'Night Vision', icon:'👁', price:400, count:1,  type:'nightvision', permanent:true },
+  nv_detection:{ name:'NV: Zombie Detect', icon:'🔍', price:600, count:1, type:'nv_detection', permanent:true },
+  nv_battery:  { name:'NV: Extended Battery', icon:'🔋', price:500, count:1, type:'nv_battery', permanent:true },
+  nv_recharge: { name:'NV: Fast Recharge', icon:'⚡', price:450, count:1, type:'nv_recharge', permanent:true },
   armor:      { name:'Body Armor',    icon:'🛡', price:500,  count:1, type:'armor',       permanent:true },
   turret:     { name:'Turret',        icon:'🗼', price:600,  count:1, type:'turret'   },
   barricade:  { name:'Barricade',     icon:'🧱', price:80,   count:5, type:'barricade'},
@@ -514,6 +517,10 @@ function saveGameState() {
         infection: G.player.infection, infectionDeathTimer: G.player.infectionDeathTimer,
         armor: G.player.armor, hasArmor: G.player.hasArmor,
         hasNightVision: G.player.hasNightVision,
+        nvBatteryLevel: G.player.nvBatteryLevel||0,
+        nvRechargeLevel: G.player.nvRechargeLevel||0,
+        nvDetection: G.player.nvDetection||false,
+        nvBatteryCurrent: G.nvBatteryCurrent||0,
         slots: JSON.parse(JSON.stringify(G.player.slots)),
         inventory: JSON.parse(JSON.stringify(G.player.inventory)),
         selectedSlot: G.player.selectedSlot,
@@ -595,6 +602,9 @@ function initGame() {
     weather: WEATHERS[0],
     weatherTimer: 120000,
     nightVisionActive: false,
+    nvBatteryCurrent: 0,  // current NV battery charge (seconds)
+    skyBrightness: 1.0,   // 0=night, 1=day — lerps during transitions
+    skyTransitioning: false,
     flashlightOn: false,
     flashlightBattery: 100, // percent, drains while on
 
@@ -621,6 +631,10 @@ function buildPlayerFromPerks() {
     armor: 0, armorPerk: 0,
     infection: 0, infectionResist: 0,
     hasNightVision: false, hasArmor: false,
+    nvBattery: 0,        // 0 = no NV, >0 = has NV with this max battery
+    nvBatteryLevel: 0,   // 0=none, 1=basic(100s), 2=extended(200s), 3=ultra(350s)
+    nvRechargeLevel: 0,  // 0=base, 1=fast, 2=faster
+    nvDetection: false,  // zombie highlight upgrade
     selectedSlot: 0,
     slots: [
       { weapon:'pistol', ammo:12, reserve:48, reloading:false, reloadStart:0 },
@@ -1130,6 +1144,7 @@ function getZombiePool(wave) {
 function startNightWave() {
   G.phase = 'night';
   G.bossSpawned = false;
+  G.skyTransitioning = true; // will lerp skyBrightness to 0
   stopLoop('day_amb');
   startLoop('night_amb', 0.3);
   G.shopOpen = false;
@@ -1216,6 +1231,7 @@ function spawnZombie(type) {
 function startDayPhase() {
   G.phase = 'day';
   G.dayTimer = 60;
+  G.skyTransitioning = true; // will lerp skyBrightness to 1
   stopLoop('night_amb');
   stopLoop('zombie_loop', 1000);
   startLoop('day_amb', 0.25);
@@ -1331,7 +1347,21 @@ function renderShopTab(tab) {
       const cnt = G.player.inventory[item.key]||0;
       if (cnt>0) ownedStr = `<div class="si-owned">x${cnt} owned</div>`;
       // Permanent gear
-      if (item.key==='nightvision' && G.player.hasNightVision) { ownedStr = '<div class="si-owned">✓ Owned — buy again to recharge</div>'; isOwned = false; }
+      if (item.key==='nightvision' && G.player.hasNightVision) { ownedStr = '<div class="si-owned">✓ Owned — buy again to recharge flashlight</div>'; isOwned = false; }
+      if (item.key==='nv_detection') {
+        if (!G.player.hasNightVision) { ownedStr='<div class="si-owned">⚠ Requires Night Vision</div>'; isOwned=true; }
+        else if (G.player.nvDetection) { ownedStr='<div class="si-owned">✓ Active</div>'; isOwned=true; }
+      }
+      if (item.key==='nv_battery') {
+        if (!G.player.hasNightVision) { ownedStr='<div class="si-owned">⚠ Requires Night Vision</div>'; isOwned=true; }
+        else if ((G.player.nvBatteryLevel||1)>=3) { ownedStr='<div class="si-owned">✓ MAX</div>'; isOwned=true; }
+        else { ownedStr=`<div class="si-owned">Lv ${G.player.nvBatteryLevel||1}/3</div>`; }
+      }
+      if (item.key==='nv_recharge') {
+        if (!G.player.hasNightVision) { ownedStr='<div class="si-owned">⚠ Requires Night Vision</div>'; isOwned=true; }
+        else if ((G.player.nvRechargeLevel||0)>=2) { ownedStr='<div class="si-owned">✓ MAX</div>'; isOwned=true; }
+        else { ownedStr=`<div class="si-owned">Lv ${G.player.nvRechargeLevel||0}/2</div>`; }
+      }
       if ((item.key==='armor'||item.key==='heavyarmor') && G.player.hasArmor) { ownedStr = '<div class="si-owned">✓ Owned — click to unequip</div>'; isOwned = true; }
     }
     div.className = 'shop-item' + (cantAfford&&!isOwned?' cant-afford':'') + (ownedStr?' owned-item':'');
@@ -1392,6 +1422,10 @@ function buyItem(item) {
       if (item.key==='nightvision' && G.player.hasNightVision) {
         G.player.hasNightVision = false;
         G.nightVisionActive = false;
+        G.player.nvBatteryLevel = 0;
+        G.player.nvRechargeLevel = 0;
+        G.player.nvDetection = false;
+        G.nvBatteryCurrent = 0;
         const refund = Math.floor(item.price * 0.5);
         G.money += refund;
         addFloatingText(`Night Vision removed — +${refund} refund`, canvas.width/2, canvas.height/2-40, '#e67e22');
@@ -1428,11 +1462,28 @@ function buyItem(item) {
       if (item.key==='nightvision') {
         if (!G.player.hasNightVision) {
           G.player.hasNightVision = true;
+          G.player.nvBatteryLevel = Math.max(1, G.player.nvBatteryLevel||0);
+          G.nvBatteryCurrent = 100; // start with full basic battery
+          addFloatingText('👁 Night Vision equipped! 100s battery', canvas.width/2, canvas.height/2-40, '#00ff88');
         } else {
           // Already owned — extra purchase recharges flashlight battery
           G.flashlightBattery = 100;
           addFloatingText('NV Battery Recharged!', canvas.width/2, canvas.height/2-40, '#2ecc71');
         }
+      }
+      if (item.key==='nv_detection') {
+        G.player.nvDetection = true;
+        addFloatingText('👁 NV: Zombie Detection active!', canvas.width/2, canvas.height/2-40, '#00ff88');
+      }
+      if (item.key==='nv_battery') {
+        G.player.nvBatteryLevel = Math.min(3, (G.player.nvBatteryLevel||1) + 1);
+        const newMax = [100,200,350][G.player.nvBatteryLevel-1];
+        G.nvBatteryCurrent = newMax; // refill on upgrade
+        addFloatingText(`👁 NV Battery upgraded! ${newMax}s`, canvas.width/2, canvas.height/2-40, '#00ff88');
+      }
+      if (item.key==='nv_recharge') {
+        G.player.nvRechargeLevel = Math.min(2, (G.player.nvRechargeLevel||0) + 1);
+        addFloatingText('👁 NV Recharge speed upgraded!', canvas.width/2, canvas.height/2-40, '#00ff88');
       }
       if (item.key==='armor') { G.player.hasArmor=true; G.player.armor=40; }
       if (item.key==='heavyarmor') { G.player.hasArmor=true; G.player.armor=60; }
@@ -1676,6 +1727,10 @@ function continueGame() {
   p.armor = state.player.armor;
   p.hasArmor = state.player.hasArmor;
   p.hasNightVision = state.player.hasNightVision;
+  p.nvBatteryLevel = state.player.nvBatteryLevel||0;
+  p.nvRechargeLevel = state.player.nvRechargeLevel||0;
+  p.nvDetection = state.player.nvDetection||false;
+  G.nvBatteryCurrent = state.player.nvBatteryCurrent||0;
   p.slots = state.player.slots;
   p.inventory = state.player.inventory;
   p.selectedSlot = state.player.selectedSlot;
@@ -1725,8 +1780,11 @@ function reloadWeapon() {
 }
 
 function toggleNightVision() {
-  if (!G.player.hasNightVision && G.phase==='night') {
+  if (!G.player.hasNightVision) {
     addFloatingText('Need Night Vision!', canvas.width/2, canvas.height/2, '#e74c3c'); return;
+  }
+  if (!G.nightVisionActive && G.nvBatteryCurrent <= 0) {
+    addFloatingText('👁 NV Battery Empty! Recharging...', canvas.width/2, canvas.height/2-40, '#00ff88'); return;
   }
   G.nightVisionActive = !G.nightVisionActive;
   document.getElementById('nv-btn').classList.toggle('active', G.nightVisionActive);
@@ -1828,7 +1886,7 @@ function doMelee() {
   G.player.lastMelee = now;
 
   const baseDmg = 40 + (G.player.meleeDmgBonus||0);
-  const baseRange = 45 + (G.player.meleeRangeBonus||0);
+  const baseRange = 65 + (G.player.meleeRangeBonus||0);
   const angle = G.player.facing;
 
   // Hit all zombies in a cone in front of player
@@ -2581,18 +2639,29 @@ function updateInfection(dt) {
 function updateWeather(dt) {
   G.weatherTimer-=dt;
   if (G.weatherTimer<=0) {
+    G._prevWeather = G.weather;
     G.weather=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];
     G.weatherTimer=120000+Math.random()*180000; // 2–5 minutes between changes
+    G.weatherAlpha = 0; // start fade-in of new weather
     document.getElementById('weather-icon').textContent=G.weather.icon;
     document.getElementById('weather-text').textContent=G.weather.name;
+    addFloatingText(`${G.weather.icon} ${G.weather.name}`, canvas.width/2, canvas.height/2-120, '#74b9ff');
   }
+  // Fade weather in over ~8 seconds
+  if (G.weatherAlpha === undefined) G.weatherAlpha = 1;
+  if (G.weatherAlpha < 1) G.weatherAlpha = Math.min(1, G.weatherAlpha + dt/8000);
+
   if (G.weather.rain) {
-    for (let i=0;i<2;i++) {
-      G.rainDrops.push({ x:G.cam.x+Math.random()*canvas.width, y:G.cam.y+Math.random()*canvas.height, len:7+Math.random()*7, speed:8+G.weather.wind*2, alpha:0.25+Math.random()*0.25 });
+    const spawnRate = Math.round(2 * G.weatherAlpha);
+    for (let i=0;i<spawnRate;i++) {
+      G.rainDrops.push({ x:G.cam.x+Math.random()*canvas.width, y:G.cam.y+Math.random()*canvas.height, len:7+Math.random()*7, speed:8+G.weather.wind*2, alpha:(0.25+Math.random()*0.25)*G.weatherAlpha });
     }
     if (G.rainDrops.length>300) G.rainDrops.splice(0,G.rainDrops.length-300);
+  } else {
+    // Drain rain drops when weather clears
+    if (G.rainDrops.length > 0) G.rainDrops.splice(0, Math.ceil(G.rainDrops.length * 0.01));
   }
-  if (G.weather.lightning&&Math.random()<0.00015*dt) { G.lightningFlash=80; playSound('lightning', 0.3); }
+  if (G.weather.lightning&&Math.random()<0.00015*dt*G.weatherAlpha) { G.lightningFlash=80; playSound('lightning', 0.3); }
   if (G.lightningFlash>0) G.lightningFlash-=dt;
 }
 
@@ -2706,15 +2775,35 @@ function burnRemainingZombies() {
 
 function updateFlashlightBattery(dt) {
   const rechargeMult = G.player.flashRechargeMult || 1;
-  const maxBattery = 100 + (G.player.flashBatteryBonus||0) * 0.71; // each bonus second = ~0.71%
+  const maxBattery = 100 + (G.player.flashBatteryBonus||0) * 0.71;
   if (G.flashlightOn) {
-    G.flashlightBattery = Math.max(0, G.flashlightBattery - dt * 0.007); // ~240s full drain
+    G.flashlightBattery = Math.max(0, G.flashlightBattery - dt * 0.007);
     if (G.flashlightBattery <= 0) {
       G.flashlightOn = false;
       addFloatingText('🔦 Battery dead!', canvas.width/2, canvas.height/2-50, '#e74c3c');
     }
   } else {
     G.flashlightBattery = Math.min(maxBattery, G.flashlightBattery + dt * 0.006 * rechargeMult);
+  }
+
+  // ── NV Battery ──
+  const p = G.player;
+  if (!p.hasNightVision) return;
+  // Max battery by upgrade level: 1=100s, 2=200s, 3=350s
+  const nvMaxSec = [100, 200, 350][Math.min(2, (p.nvBatteryLevel||1)-1)];
+  // Recharge rate: base=0.5%/s of max, level1=1%/s, level2=1.8%/s
+  const nvRechargeRate = [0.5, 1.0, 1.8][Math.min(2, p.nvRechargeLevel||0)];
+
+  if (G.nightVisionActive) {
+    G.nvBatteryCurrent = Math.max(0, G.nvBatteryCurrent - dt/1000);
+    if (G.nvBatteryCurrent <= 0) {
+      G.nightVisionActive = false;
+      document.getElementById('nv-btn').classList.remove('active');
+      addFloatingText('👁 NV Battery Dead!', canvas.width/2, canvas.height/2-50, '#00ff88');
+    }
+  } else {
+    // Recharge when off
+    G.nvBatteryCurrent = Math.min(nvMaxSec, G.nvBatteryCurrent + (nvRechargeRate/100)*nvMaxSec*(dt/1000));
   }
 }
 
@@ -3321,6 +3410,28 @@ function drawZombies() {
     }
     ctx.globalAlpha = zombieAlpha;
 
+    // NV Detection highlight — outline all zombies when active
+    if (G.nightVisionActive && G.player.nvDetection) {
+      const dist = Math.hypot(z.x-G.player.x, z.y-G.player.y);
+      if (dist < 800) {
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(sx, sy, sz+4, 0, Math.PI*2); ctx.stroke();
+        // Distance label
+        ctx.font = 'bold 9px Orbitron,sans-serif';
+        ctx.fillStyle = '#00ff88';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 4;
+        ctx.fillText(Math.round(dist)+'m', sx, sy - sz - 6);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+    }
+
     ctx.save();
     ctx.translate(sx, sy);
 
@@ -3756,8 +3867,9 @@ function drawRain() {
 }
 
 function drawNightOverlay() {
-  if (G.phase!=='night') return;
+  if (G.skyBrightness >= 0.99) return;
   const px=G.player.x-G.cam.x, py=G.player.y-G.cam.y;
+  const darkAlpha = 0.94 * (1 - G.skyBrightness); // fades out during day transition
 
   // Create/reuse offscreen darkness canvas
   if (!G._darkCanvas || G._darkCanvas.width!==canvas.width || G._darkCanvas.height!==canvas.height) {
@@ -3772,7 +3884,7 @@ function drawNightOverlay() {
   // Fill with darkness
   dc.globalCompositeOperation = 'source-over';
   dc.clearRect(0,0,dw,dh);
-  dc.fillStyle = 'rgba(0,0,18,0.94)';
+  dc.fillStyle = `rgba(0,0,18,${darkAlpha})`;
   dc.fillRect(0,0,dw,dh);
 
   // Switch to destination-out — everything drawn now punches holes
@@ -3897,11 +4009,21 @@ function drawNightOverlay() {
 }
 
 function drawDayAtmosphere() {
-  if (G.phase!=='day') return;
-  // Subtle sky tint
-  ctx.fillStyle='rgba(135,206,235,0.06)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  const sb = G.skyBrightness || 0;
+  if (sb <= 0.01) return;
+  // Subtle sky tint — fades in with skyBrightness
+  ctx.fillStyle=`rgba(135,206,235,${0.06*sb})`; ctx.fillRect(0,0,canvas.width,canvas.height);
   if (G.weather.fog>0) {
-    ctx.fillStyle=`rgba(220,220,230,${G.weather.fog*0.45})`; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle=`rgba(220,220,230,${G.weather.fog*0.45*sb})`; ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+  // Sunrise/sunset glow during transition
+  const transitionStrength = 1 - Math.abs(sb - 0.5) * 2; // peaks at sb=0.5
+  if (transitionStrength > 0.05) {
+    const grad = ctx.createLinearGradient(0, canvas.height*0.6, 0, canvas.height);
+    grad.addColorStop(0, `rgba(255,120,30,${transitionStrength*0.18})`);
+    grad.addColorStop(1, `rgba(255,60,0,0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 }
 
@@ -4478,7 +4600,7 @@ function gameLoop(ts) {
   // Update
   if (G.phase==='day') updateDayTimer(dt);
   if (G.phase==='night') updateNightTimer(dt);
-  if (G.phase==='night') updateFlashlightBattery(dt);
+  updateFlashlightBattery(dt); // always update (handles NV recharge during day too)
   if (G.player.downed) { updateDownedTimer(dt); updateCamera(); } else {
   movePlayer(dt);
   updateCamera();
@@ -4512,7 +4634,13 @@ function gameLoop(ts) {
   G._ambTick+=dt;
   if (G._ambTick>1000) { G._ambTick=0; updateAmbience(); }
   if (G.player.sprinting !== G._lastSprint) { G._lastSprint=G.player.sprinting; updateHUD(); }
-  // Update stamina and battery bars every frame so they drain/fill smoothly
+  // Update sky brightness transition (day/night fade over ~2s)
+  const skyTarget = G.phase === 'day' ? 1.0 : 0.0;
+  if (Math.abs(G.skyBrightness - skyTarget) > 0.005) {
+    G.skyBrightness += (skyTarget - G.skyBrightness) * (dt * 0.0015);
+  } else {
+    G.skyBrightness = skyTarget;
+  }
   const _sf = document.getElementById('stamina-fill');
   const _st = document.getElementById('stamina-text');
   if (_sf) {
@@ -4527,16 +4655,34 @@ function gameLoop(ts) {
     _bf.style.width = _b + '%';
     _bf.style.background = _b > 50 ? 'linear-gradient(90deg,#2ecc71,#f1c40f)' : _b > 20 ? '#f39c12' : '#e74c3c';
   }
+  // NV battery bar
+  const _nvf = document.getElementById('nv-battery-fill');
+  const _nvt = document.getElementById('nv-battery-text');
+  const _nvd = document.getElementById('nv-battery-display');
+  if (_nvf && G.player) {
+    if (G.player.hasNightVision) {
+      if (_nvd) _nvd.style.display='';
+      const nvMax = [100,200,350][Math.min(2,(G.player.nvBatteryLevel||1)-1)];
+      const nvPct = Math.max(0, Math.min(100, (G.nvBatteryCurrent/nvMax)*100));
+      _nvf.style.width = nvPct+'%';
+      _nvf.style.background = nvPct>50?'#00ff88':nvPct>20?'#f39c12':'#e74c3c';
+      if (_nvt) _nvt.textContent = G.nightVisionActive ? `👁 ${Math.ceil(G.nvBatteryCurrent)}s` : `⚡ ${Math.ceil(G.nvBatteryCurrent)}s`;
+    } else {
+      if (_nvd) _nvd.style.display='none';
+    }
+  }
   } // end downed else
 
   // ── Draw ──
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  if (G.phase==='night') {
-    ctx.fillStyle='#05080f'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  } else {
-    ctx.fillStyle='#1a2a0a'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
+  // Sky background — lerps between night (#05080f) and day (#1a2a0a) based on skyBrightness
+  const sb = G.skyBrightness || 0;
+  const skyR = Math.round(5  + (26-5)  * sb);
+  const skyG = Math.round(8  + (42-8)  * sb);
+  const skyB = Math.round(15 + (10-15) * sb);
+  ctx.fillStyle = `rgb(${skyR},${skyG},${skyB})`;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
   drawMap();
   drawStructureLabels();
@@ -4552,7 +4698,8 @@ function gameLoop(ts) {
   drawPlayer();
   drawParticles();
   drawDayAtmosphere();
-  if (G.phase==='night') drawNightOverlay();
+  // Draw night overlay whenever sky isn't fully bright (handles transition)
+  if (G.skyBrightness < 0.99) drawNightOverlay();
   drawRain(); // draw rain AFTER night overlay so it shows as dark streaks at night
   drawLightning();
   drawFloatingTexts();
