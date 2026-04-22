@@ -39,23 +39,23 @@ const BASE_Y = Math.floor(MAP_H / 2);
 // ── Weapon Definitions ─────────────────────────────────────────
 // drawFn: function(ctx, w, h) draws the gun clipart
 const WEAPONS = {
-  pistol:       { name:'Pistol',        damage:25,  fireRate:400,  range:350, spread:0.05, ammo:12,  maxAmmo:12,  reloadTime:3060, bulletSize:5,  speed:10, auto:false, price:0,    color:'#f1c40f', reserveAmmo:48,  maxReserve:96,  draw(c,w,h){drawPistol(c,w,h);} },
-  shotgun:      { name:'Shotgun',       damage:20,  fireRate:900,  range:250, spread:0.25, ammo:6,   maxAmmo:6,   reloadTime:875,  bulletSize:7,  speed:9,  auto:false, pellets:6, price:300,  color:'#e67e22', reserveAmmo:24,  maxReserve:48,  draw(c,w,h){drawShotgun(c,w,h);} },
-  smg:          { name:'SMG',           damage:15,  fireRate:110,  range:300, spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:3700, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
-  rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:500, spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:3700, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
-  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:700, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:7060, bulletSize:8,  speed:20, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
-  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:350, spread:0.18, ammo:200, maxAmmo:200, reloadTime:7060, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:400, maxReserve:600, draw(c,w,h){drawMinigun(c,w,h);} },
-  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:180, spread:0.4,  ammo:100, maxAmmo:100, reloadTime:3700, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:200, maxReserve:400, flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
+  pistol:       { name:'Pistol',        damage:25,  fireRate:400,  range:350, spread:0.05, ammo:12,  maxAmmo:12,  reloadTime:1800, bulletSize:5,  speed:10, auto:false, price:0,    color:'#f1c40f', reserveAmmo:48,  maxReserve:96,  draw(c,w,h){drawPistol(c,w,h);} },
+  shotgun:      { name:'Shotgun',       damage:20,  fireRate:900,  range:250, spread:0.25, ammo:6,   maxAmmo:6,   reloadTime:700,  bulletSize:7,  speed:9,  auto:false, pellets:6, price:300,  color:'#e67e22', reserveAmmo:24,  maxReserve:48,  draw(c,w,h){drawShotgun(c,w,h);} },
+  smg:          { name:'SMG',           damage:15,  fireRate:110,  range:300, spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:2000, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
+  rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:500, spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:2200, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
+  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:700, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:3500, bulletSize:8,  speed:20, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
+  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:350, spread:0.18, ammo:200, maxAmmo:200, reloadTime:4000, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:400, maxReserve:600, draw(c,w,h){drawMinigun(c,w,h);} },
+  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:180, spread:0.4,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:200, maxReserve:400, flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
   // ── New weapons ──
-  revolver:     { name:'Revolver',      damage:70,  fireRate:700,  range:400, spread:0.03, ammo:6,   maxAmmo:6,   reloadTime:3060, bulletSize:6,  speed:14, auto:false, price:600,  color:'#c0392b', reserveAmmo:30,  maxReserve:60,  draw(c,w,h){drawRevolver(c,w,h);} },
-  deagle:       { name:'Desert Eagle',  damage:90,  fireRate:600,  range:420, spread:0.04, ammo:7,   maxAmmo:7,   reloadTime:3060, bulletSize:7,  speed:15, auto:false, price:900,  color:'#f39c12', reserveAmmo:28,  maxReserve:56,  draw(c,w,h){drawDeagle(c,w,h);} },
-  ak47:         { name:'AK-47',         damage:35,  fireRate:130,  range:380, spread:0.09, ammo:30,  maxAmmo:30,  reloadTime:7060, bulletSize:5,  speed:14, auto:true,  price:700,  color:'#e67e22', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawAK47(c,w,h);} },
-  m4:           { name:'M4A1',          damage:30,  fireRate:100,  range:420, spread:0.06, ammo:30,  maxAmmo:30,  reloadTime:3700, bulletSize:5,  speed:15, auto:true,  price:850,  color:'#27ae60', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawM4(c,w,h);} },
-  rpg:          { name:'RPG',           damage:200, fireRate:3000, range:600, spread:0.01, ammo:1,   maxAmmo:1,   reloadTime:7060, bulletSize:12, speed:8,  auto:false, price:2000, color:'#e74c3c', reserveAmmo:3,   maxReserve:6,   explosive:3, draw(c,w,h){drawRPG(c,w,h);} },
-  crossbow:     { name:'Crossbow',      damage:120, fireRate:1200, range:550, spread:0.01, ammo:6,   maxAmmo:6,   reloadTime:7060, bulletSize:6,  speed:18, auto:false, price:1000, color:'#8e44ad', reserveAmmo:18,  maxReserve:36,  draw(c,w,h){drawCrossbow(c,w,h);} },
-  uzi:          { name:'Uzi',           damage:12,  fireRate:80,   range:250, spread:0.15, ammo:32,  maxAmmo:32,  reloadTime:3060, bulletSize:4,  speed:13, auto:true,  price:650,  color:'#16a085', reserveAmmo:96,  maxReserve:192, draw(c,w,h){drawUzi(c,w,h);} },
-  lmg:          { name:'LMG',           damage:22,  fireRate:95,   range:400, spread:0.1,  ammo:100, maxAmmo:100, reloadTime:3700, bulletSize:5,  speed:14, auto:true,  price:1600, color:'#d35400', reserveAmmo:200, maxReserve:400, draw(c,w,h){drawLMG(c,w,h);} },
-  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:800, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:7060, bulletSize:10, speed:30, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  draw(c,w,h){drawRailgun(c,w,h);} },
+  revolver:     { name:'Revolver',      damage:70,  fireRate:700,  range:400, spread:0.03, ammo:6,   maxAmmo:6,   reloadTime:1800, bulletSize:6,  speed:14, auto:false, price:600,  color:'#c0392b', reserveAmmo:30,  maxReserve:60,  draw(c,w,h){drawRevolver(c,w,h);} },
+  deagle:       { name:'Desert Eagle',  damage:90,  fireRate:600,  range:420, spread:0.04, ammo:7,   maxAmmo:7,   reloadTime:1800, bulletSize:7,  speed:15, auto:false, price:900,  color:'#f39c12', reserveAmmo:28,  maxReserve:56,  draw(c,w,h){drawDeagle(c,w,h);} },
+  ak47:         { name:'AK-47',         damage:35,  fireRate:130,  range:380, spread:0.09, ammo:30,  maxAmmo:30,  reloadTime:3500, bulletSize:5,  speed:14, auto:true,  price:700,  color:'#e67e22', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawAK47(c,w,h);} },
+  m4:           { name:'M4A1',          damage:30,  fireRate:100,  range:420, spread:0.06, ammo:30,  maxAmmo:30,  reloadTime:2200, bulletSize:5,  speed:15, auto:true,  price:850,  color:'#27ae60', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawM4(c,w,h);} },
+  rpg:          { name:'RPG',           damage:200, fireRate:3000, range:600, spread:0.01, ammo:1,   maxAmmo:1,   reloadTime:3500, bulletSize:12, speed:8,  auto:false, price:2000, color:'#e74c3c', reserveAmmo:3,   maxReserve:6,   explosive:3, draw(c,w,h){drawRPG(c,w,h);} },
+  crossbow:     { name:'Crossbow',      damage:120, fireRate:1200, range:550, spread:0.01, ammo:6,   maxAmmo:6,   reloadTime:3500, bulletSize:6,  speed:18, auto:false, price:1000, color:'#8e44ad', reserveAmmo:18,  maxReserve:36,  draw(c,w,h){drawCrossbow(c,w,h);} },
+  uzi:          { name:'Uzi',           damage:12,  fireRate:80,   range:250, spread:0.15, ammo:32,  maxAmmo:32,  reloadTime:1800, bulletSize:4,  speed:13, auto:true,  price:650,  color:'#16a085', reserveAmmo:96,  maxReserve:192, draw(c,w,h){drawUzi(c,w,h);} },
+  lmg:          { name:'LMG',           damage:22,  fireRate:95,   range:400, spread:0.1,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:5,  speed:14, auto:true,  price:1600, color:'#d35400', reserveAmmo:200, maxReserve:400, draw(c,w,h){drawLMG(c,w,h);} },
+  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:800, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:3500, bulletSize:10, speed:30, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  draw(c,w,h){drawRailgun(c,w,h);} },
 };
 
 // ── Gun Clipart Drawing Functions ──────────────────────────────
@@ -396,7 +396,7 @@ _loadSound('btn_click',      'sounds/buttonclick.mp3',                    false,
 _loadSound('shop_open',      'sounds/Open shop doorbell - Creator Store.ogg', false, 0.55);
 _loadSound('throw_item',     'sounds/throw-item.ogg',                     false, 0.6);
 _loadSound('loot',           'sounds/loot.wav',                           false, 0.55);
-_loadSound('explosion',      'sounds/explosion.ogg',                      false, 0.65);
+_loadSound('explosion',      'sounds/explosion.ogg',                      false, 0.35);
 _loadSound('molotov',        'sounds/molotove-explode.mp3',               false, 0.6);
 _loadSound('pause_in',       'sounds/pause_game.mp3',                     false, 0.5);
 _loadSound('pause_out',      'sounds/unpause_game.mp3',                   false, 0.5);
@@ -631,6 +631,7 @@ function initGame() {
     player: p,
     base: { hp:500, maxHp:500, x:BASE_X*TILE, y:BASE_Y*TILE, w:TILE*3, h:TILE*3 },
     fortLevel: 0, // 0=campfire, 1=small camp, 2=wooden fort, 3=stone fort
+    fortWallHp: 0, fortWallMaxHp: 0, // wall HP for level 2+ forts
 
     money: 100 + (p.startMoneyBonus||0),
     totalKills: 0,
@@ -1396,7 +1397,7 @@ function renderShopTab(tab) {
     let isOwned = false;
     if (item.category==='weapon') {
       const has = G.player.slots.some(s=>s&&s.weapon===item.key);
-      if (has) { ownedStr = '<div class="si-owned">✓ Owned — click to unequip</div>'; isOwned = true; }
+      if (has) { ownedStr = '<div class="si-owned">✓ Equipped</div>'; isOwned = true; }
     } else if (item.category==='item') {
       const cnt = G.player.inventory[item.key]||0;
       if (cnt>0) ownedStr = `<div class="si-owned">x${cnt} owned</div>`;
@@ -1454,19 +1455,11 @@ function renderShopTab(tab) {
 }
 
 function buyItem(item) {
-  // Unequip logic — clicking owned weapon/gear removes it and refunds half price
+  // Owned weapon — clicking does nothing, just show a message
   if (item.category==='weapon') {
     const ownedIdx = G.player.slots.findIndex((s,i)=>i>0&&s&&s.weapon===item.key);
     if (ownedIdx !== -1) {
-      // Unequip: remove from slot, refund 50%
-      G.player.slots[ownedIdx] = null;
-      const refund = Math.floor(item.price * 0.5);
-      G.money += refund;
-      addFloatingText(`Unequipped — +${refund} refund`, canvas.width/2, canvas.height/2-40, '#e67e22');
-      if (G.player.selectedSlot === ownedIdx) G.player.selectedSlot = 0;
-      updateToolbar(); updateHUD();
-      document.getElementById('shop-money-val').textContent = G.money;
-      renderShopTab(G.shopTab);
+      addFloatingText('Already equipped!', canvas.width/2, canvas.height/2-40, '#888');
       return;
     }
   }
@@ -1576,6 +1569,11 @@ function buyItem(item) {
         G.fortLevel++;
         G.base.maxHp = nextTier.maxHp;
         G.base.hp = nextTier.maxHp;
+        // Set wall HP for walled forts
+        if (G.fortLevel >= 2) {
+          G.fortWallMaxHp = G.fortLevel === 2 ? 600 : 1200;
+          G.fortWallHp = G.fortWallMaxHp;
+        }
         addFloatingText('🏰 Fort upgraded to '+nextTier.name+'!', canvas.width/2, canvas.height/2-60, '#f1c40f');
         updateHUD();
         return; // Skip the generic money deduction below
@@ -1816,6 +1814,12 @@ function continueGame() {
 //  PLAYER ACTIONS
 // ═══════════════════════════════════════════════════════════════
 function selectSlot(i) {
+  // Cancel reload on the old slot when switching
+  const oldSlot = G.player.slots[G.player.selectedSlot];
+  if (oldSlot && oldSlot.reloading) {
+    oldSlot.reloading = false;
+    oldSlot.reloadStart = 0;
+  }
   G.player.selectedSlot = i;
   document.querySelectorAll('.tool-slot').forEach((el,idx)=>el.classList.toggle('active',idx===i));
   updateHUD();
@@ -2076,7 +2080,15 @@ function movePlayer(dt) {
   const inWater = (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)] === 'water';
   const waterSlow = inWater ? 0.45 : 1;
   if (inWater && isMoving && Math.random()<0.15) spawnParticles(p.x,p.y,'#4a9eff',2,1.5);
-  if (inWater && isMoving && Math.random()<0.04) playSound('walk_water', 0.15);
+  if (inWater && isMoving) {
+    if (!p._lastWaterStep) p._lastWaterStep = 0;
+    const now3 = performance.now();
+    if (now3 - p._lastWaterStep > 500) {
+      p._lastWaterStep = now3;
+      playSound('walk_water', 0.1);
+    }
+    if (Math.random()<0.15) spawnParticles(p.x,p.y,'#4a9eff',2,1.5);
+  }
 
   // Footstep sounds
   if (isMoving) {
@@ -2299,12 +2311,17 @@ function moveZombies(dt) {
     // Attack base
     if (dBase<z.size+62&&now-z.lastAttack>1000) {
       z.lastAttack=now;
-      // Fort with walls (level 2+) is invincible — only show message occasionally
-      if (G.fortLevel >= 2) {
-        spawnParticles(bCX,bCY,'#f1c40f',4,3);
-        if (Math.random() < 0.15) addFloatingText('FORT PROTECTED!', bCX-G.cam.x, bCY-G.cam.y-30, '#f1c40f');
+      if (G.fortLevel >= 2 && G.fortWallHp > 0) {
+        // Walls still standing — damage the wall
+        G.fortWallHp = Math.max(0, G.fortWallHp - z.damage);
+        spawnParticles(bCX,bCY,'#8B4513',3,3);
+        if (G.fortWallHp <= 0) {
+          addFloatingText('⚠ WALLS BREACHED!', canvas.width/2, canvas.height/2-60, '#e74c3c');
+          spawnParticles(bCX,bCY,'#e74c3c',20,6);
+        }
+        updateHUD();
       } else {
-        // Level 0 or 1 — fort takes damage
+        // No walls or walls broken — damage the base directly
         G.base.hp=Math.max(0,G.base.hp-z.damage);
         spawnParticles(bCX,bCY,'#e74c3c',3,3); updateHUD();
         if (G.base.hp<=0) triggerGameOver('base');
@@ -2339,8 +2356,10 @@ function damagePlayer(dmg, infected) {
 function playerDowned() {
   if (G.player.downed) return;
   G.player.downed = true;
-  G.player.downedTimer = 10; // 10 seconds to revive
+  G.player.downedTimer = 10;
   G.player.hp = 0;
+  // Infection only drops by 10% on death, not reset
+  G.player.infection = Math.max(0, G.player.infection - 10);
   addFloatingText('DOWNED! Reviving in 10s...', canvas.width/2, canvas.height/2-60, '#e74c3c');
   updateHUD();
 }
@@ -2357,10 +2376,9 @@ function updateDownedTimer(dt) {
 function revivePlayer() {
   G.player.downed = false;
   G.player.hp = Math.floor(G.player.maxHp * 0.5);
-  // Teleport back to base
   G.player.x = G.base.x + G.base.w/2;
   G.player.y = G.base.y + G.base.h/2;
-  G.player.infection = Math.min(G.player.infection, 50); // cap infection on revive
+  // Infection stays as-is (already reduced by 10% on death)
   addFloatingText('REVIVED!', canvas.width/2, canvas.height/2-60, '#2ecc71');
   updateHUD();
 }
@@ -3266,6 +3284,17 @@ function drawBase() {
   ctx.fillStyle=hpPct>0.5?'#2ecc71':hpPct>0.25?'#f39c12':'#e74c3c';
   ctx.beginPath(); ctx.roundRect(cx-barW/2, cy-groundR-38, barW*hpPct, 8, 4); ctx.fill();
 
+  // ── Wall HP bar (level 2+) ──
+  if (G.fortLevel >= 2 && G.fortWallMaxHp > 0) {
+    const wallPct = G.fortWallHp / G.fortWallMaxHp;
+    ctx.fillStyle='rgba(0,0,0,0.6)';
+    ctx.beginPath(); ctx.roundRect(cx-barW/2, cy-groundR-52, barW, 6, 3); ctx.fill();
+    ctx.fillStyle = wallPct > 0.5 ? '#8B4513' : wallPct > 0.2 ? '#d35400' : '#e74c3c';
+    ctx.beginPath(); ctx.roundRect(cx-barW/2, cy-groundR-52, barW*wallPct, 6, 3); ctx.fill();
+    ctx.fillStyle='#aaa'; ctx.font='bold 8px Orbitron,sans-serif'; ctx.textAlign='center';
+    ctx.fillText('WALL', cx, cy-groundR-47);
+  }
+
   // ── Shop (south of campfire) ──
   const shop = getShopPosition();
   const sx = shop.x - G.cam.x, sy = shop.y - G.cam.y;
@@ -3318,17 +3347,17 @@ function isInsideFortWalls(wx, wy) {
 // Fort wall collision — blocks movement at wall boundary, with gate opening on south side
 function isFortWall(wx, wy) {
   if (G.fortLevel < 2) return false;
+  if (G.fortWallHp <= 0) return false; // walls broken — no collision
   const tier = FORT_TIERS[G.fortLevel];
   const cx = G.base.x+G.base.w/2, cy = G.base.y+G.base.h/2;
   const dist = Math.hypot(wx-cx, wy-cy);
   const wallR = tier.wallRadius;
-  if (dist <= wallR - 10 || dist >= wallR + 10) return false; // not in wall band
-  // Gate opening: south side (positive Y), 28px wide
-  const angle = Math.atan2(wy-cy, wx-cx); // angle from center
-  const southAngle = Math.PI/2; // 90 degrees = south
-  const gateHalfWidth = Math.asin(28 / wallR); // angular half-width of gate
+  if (dist <= wallR - 10 || dist >= wallR + 10) return false;
+  const angle = Math.atan2(wy-cy, wx-cx);
+  const southAngle = Math.PI/2;
+  const gateHalfWidth = Math.asin(28 / wallR);
   const angleDiff = Math.abs(angle - southAngle);
-  if (angleDiff < gateHalfWidth) return false; // inside gate gap — passable
+  if (angleDiff < gateHalfWidth) return false;
   return true;
 }
 
@@ -4762,7 +4791,22 @@ function gameLoop(ts) {
   if (G.phase==='day') updateDayTimer(dt);
   if (G.phase==='night') updateNightTimer(dt);
   updateFlashlightBattery(dt); // always update (handles NV recharge during day too)
-  if (G.player.downed) { updateDownedTimer(dt); updateCamera(); } else {
+  if (G.player.downed) {
+    updateDownedTimer(dt);
+    updateCamera();
+    // World keeps running while downed — zombies attack fort
+    if (G.phase==='night') {
+      moveZombies(dt);
+      updateMines(dt);
+      updateTurrets(dt);
+      updateNPCs(dt);
+    }
+    updateBullets();
+    updateProjectiles();
+    updateParticles(dt);
+    updateFloatingTexts();
+    updateWeather(dt);
+  } else {
   movePlayer(dt);
   updateCamera();
 
@@ -4790,7 +4834,7 @@ function gameLoop(ts) {
   updateReload();
   updateWeather(dt);
   updateToolbar();
-  // Update ambience every ~1s
+  } // end downed else
   if (!G._ambTick) G._ambTick=0;
   G._ambTick+=dt;
   if (G._ambTick>1000) { G._ambTick=0; updateAmbience(); }
@@ -4832,7 +4876,6 @@ function gameLoop(ts) {
       if (_nvd) _nvd.style.display='none';
     }
   }
-  } // end downed else
 
   // ── Draw ──
   ctx.clearRect(0,0,canvas.width,canvas.height);
