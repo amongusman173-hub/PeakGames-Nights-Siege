@@ -414,6 +414,7 @@ _loadSound('rain_loop',     'sounds/rain.mp3',                  true,  0.0);
 _loadSound('flame_loop',    'sounds/flamethrower.mp3',          true,  0.0);
 _loadSound('zombie_loop',   'sounds/zombiesounds.mp3',          true,  0.0);
 _loadSound('river_loop',    'sounds/river_ambience.mp3',        true,  0.0);
+_loadSound('mm_music',      'sounds/main-menu-soundtrack.ogg',  true,  0.35);
 
 // Weapon → shot sound mapping
 const WEAPON_SHOT_SFX = {
@@ -563,6 +564,8 @@ function saveGameState() {
       totalKills: G.totalKills,
       earnedMoney: G.earnedMoney,
       fortLevel: G.fortLevel,
+      fortWallHp: G.fortWallHp || 0,
+      fortWallMaxHp: G.fortWallMaxHp || 0,
       base: { hp: G.base.hp, maxHp: G.base.maxHp },
       player: {
         hp: G.player.hp, maxHp: G.player.maxHp,
@@ -1284,6 +1287,16 @@ function spawnZombie(type) {
   });
 }
 
+// Initialize fort wall HP based on current fort level
+function initFortWalls() {
+  if (G.fortLevel >= 2) {
+    G.fortWallMaxHp = G.fortLevel === 2 ? 600 : 1200;
+    if (!G.fortWallHp || G.fortWallHp <= 0) G.fortWallHp = G.fortWallMaxHp;
+  } else {
+    G.fortWallHp = 0; G.fortWallMaxHp = 0;
+  }
+}
+
 function startDayPhase() {
   G.phase = 'day';
   G.dayTimer = 60;
@@ -1734,6 +1747,7 @@ document.getElementById('go-restart-btn').addEventListener('click', ()=>{ docume
 
 function startGame() {
   try {
+  stopLoop('mm_music', 800);
   document.getElementById('main-menu').classList.add('hidden');
   // Show gameplay UI
   document.getElementById('hud').classList.remove('hidden');
@@ -1753,6 +1767,7 @@ function startGame() {
 
 function continueGame() {
   try {
+  stopLoop('mm_music', 800);
   const state = loadGameState();
   if (!state) { startGame(); return; }
   document.getElementById('main-menu').classList.add('hidden');
@@ -1773,6 +1788,9 @@ function continueGame() {
   G.base.hp = state.base.hp;
   G.base.maxHp = state.base.maxHp;
   G.flashlightBattery = state.flashlightBattery;
+  G.fortWallHp = state.fortWallHp || 0;
+  G.fortWallMaxHp = state.fortWallMaxHp || 0;
+  initFortWalls(); // ensure wall HP is valid
   // Restore player fields
   const p = G.player;
   p.hp = state.player.hp;
@@ -1800,15 +1818,28 @@ function continueGame() {
     phaseBadge.textContent = '☀ DAY PHASE'; phaseBadge.className = 'day';
     document.getElementById('skip-btn').classList.remove('hidden');
     document.getElementById('shop-btn').classList.remove('hidden');
+    G.skyBrightness = 1.0;
+    startLoop('day_amb', 0.25);
+    startLoop('campfire', 0.2);
   } else {
-    phaseBadge.textContent = '🌙 NIGHT'; phaseBadge.className = 'night';
+    phaseBadge.textContent = '🌙 NIGHT PHASE'; phaseBadge.className = 'night';
     document.getElementById('skip-btn').classList.add('hidden');
     document.getElementById('shop-btn').classList.add('hidden');
+    G.skyBrightness = 0.0;
+    startLoop('night_amb', 0.3);
+    // Re-start night wave spawning
+    const cfg = getWaveConfig(G.wave);
+    G.totalZombies = cfg.total;
+    G.zombiesLeft = Math.max(0, G.zombiesLeft || cfg.total);
+    G.zombiesSpawned = G.zombiesSpawned || 0;
   }
   generateLootables();
+  if (G.structures) G.structures.forEach(s => { s.looted = false; });
   updateHUD();
   updateToolbar();
   G.running = true;
+  G.gameOver = false;
+  G.paused = false;
   G.lastTime = performance.now();
   requestAnimationFrame(gameLoop);
   addFloatingText('💾 Game Loaded — Wave '+G.wave, canvas.width/2, canvas.height/2-60, '#2ecc71');
@@ -4786,6 +4817,7 @@ document.getElementById('pause-main-menu').addEventListener('click', () => {
   document.getElementById('crosshair').classList.add('hidden');
   document.getElementById('main-menu').classList.remove('hidden');
   document.getElementById('mm-coins').textContent = SAVE.perkCoins;
+  startLoop('mm_music', 0.35); // restart menu music
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -5128,4 +5160,7 @@ initGame();
   }
 
   requestAnimationFrame(mmLoop);
+  // Start main menu music once audio is unlocked
+  document.addEventListener('click', ()=>{ startLoop('mm_music', 0.35); }, { once:true });
+  document.addEventListener('keydown', ()=>{ startLoop('mm_music', 0.35); }, { once:true });
 })();
