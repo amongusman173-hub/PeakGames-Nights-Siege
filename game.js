@@ -360,22 +360,42 @@ function _loadSound(key, path, loop=false, volume=1.0) {
 }
 
 // ── One-shot SFX ──
-_loadSound('pistol_shot',   'sounds/PistolShot.mp3',          false, 0.5);
-_loadSound('ak47_shot',     'sounds/ak47shot.wav',             false, 0.5);
-_loadSound('m4_shot',       'sounds/M4A1_shot.mp3',            false, 0.5);
-_loadSound('uzi_shot',      'sounds/UziShot.mp3',              false, 0.45);
-_loadSound('burst_shot',    'sounds/BurstShotX3.mp3',          false, 0.5);
-_loadSound('laser_shot',    'sounds/lasergunshot.wav',          false, 0.5);
-_loadSound('ak47_reload',   'sounds/ak47reload.wav',            false, 0.6);
-_loadSound('m4_reload',     'sounds/m4a1 reload.mp3',           false, 0.6);
-_loadSound('pistol_reload', 'sounds/pistolreload:uziandotherstuff.wav', false, 0.6);
-_loadSound('shotgun_pump',  'sounds/shotgunpump.wav',           false, 0.65);
-_loadSound('melee',         'sounds/melee.wav',                 false, 0.7);
-_loadSound('take_damage',   'sounds/take_damage.wav',           false, 0.7);
-_loadSound('flashlight',    'sounds/flashlight_on:off.mp3',     false, 0.6);
-_loadSound('night_vision',  'sounds/night-vision.wav',          false, 0.6);
-_loadSound('btn_click',     'sounds/buttonclick.mp3',           false, 0.5);
-_loadSound('lightning',     'sounds/lightningsound.mp3',        false, 0.4);
+_loadSound('pistol_shot',    'sounds/PistolShot.mp3',                    false, 0.5);
+_loadSound('ak47_shot',      'sounds/ak47shot.wav',                      false, 0.5);
+_loadSound('m4_shot',        'sounds/M4A1_shot.mp3',                     false, 0.5);
+_loadSound('uzi_shot',       'sounds/UziShot.mp3',                       false, 0.45);
+_loadSound('burst_shot',     'sounds/BurstShotX3.mp3',                   false, 0.5);
+_loadSound('laser_shot',     'sounds/lasergunshot.wav',                   false, 0.5);
+_loadSound('revolver_shot',  'sounds/revolver-shoot.ogg',                 false, 0.55);
+_loadSound('shotgun_shot',   'sounds/shotgunshoot.wav',                   false, 0.6);
+_loadSound('shotgun_reload', 'sounds/shotgunreload.wav',                  false, 0.65);
+_loadSound('shotgun_pump',   'sounds/shotgunpump.wav',                    false, 0.65);
+_loadSound('rifle_shot',     'sounds/rifle-fire.ogg',                     false, 0.5);
+_loadSound('rifle_reload',   'sounds/rifle-reload.ogg',                   false, 0.65);
+_loadSound('crossbow_shot',  'sounds/crossbowshoot.ogg',                  false, 0.55);
+_loadSound('crossbow_reload','sounds/crossbow-reload-part1.ogg',          false, 0.6);
+_loadSound('rpg_shot',       'sounds/rpg-shoot.ogg',                      false, 0.65);
+_loadSound('rpg_reload',     'sounds/rpg-reload.ogg',                     false, 0.6);
+_loadSound('revolver_reload','sounds/revolver-reload.ogg',                false, 0.6);
+_loadSound('ak47_reload',    'sounds/ak47reload.wav',                     false, 0.6);
+_loadSound('m4_reload',      'sounds/m4a1 reload.mp3',                    false, 0.75);
+_loadSound('pistol_reload',  'sounds/pistolreload:uziandotherstuff.wav',  false, 0.6);
+_loadSound('melee',          'sounds/melee.wav',                          false, 0.7);
+_loadSound('melee_hit',      'sounds/melee-hit.ogg',                      false, 0.75);
+_loadSound('take_damage',    'sounds/take_damage.wav',                    false, 0.7);
+_loadSound('flashlight_on',  'sounds/flashlight-on.ogg',                  false, 0.85);
+_loadSound('flashlight_off', 'sounds/flashlight-off.ogg',                 false, 0.85);
+_loadSound('night_vision',   'sounds/night-vision.wav',                   false, 0.6);
+_loadSound('btn_click',      'sounds/buttonclick.mp3',                    false, 0.5);
+_loadSound('shop_open',      'sounds/Open shop doorbell - Creator Store.ogg', false, 0.55);
+_loadSound('throw_item',     'sounds/throw-item.ogg',                     false, 0.6);
+_loadSound('loot',           'sounds/loot.wav',                           false, 0.55);
+_loadSound('explosion',      'sounds/explosion.ogg',                      false, 0.65);
+_loadSound('molotov',        'sounds/molotove-explode.mp3',               false, 0.6);
+_loadSound('pause_in',       'sounds/pause_game.mp3',                     false, 0.5);
+_loadSound('pause_out',      'sounds/unpause_game.mp3',                   false, 0.5);
+_loadSound('lightning',      'sounds/lightningsound.mp3',                 false, 0.4);
+_loadSound('walk_water',     'sounds/walk_in_water.mp3',                  false, 0.4);
 
 // ── Ambient loops ──
 _loadSound('day_amb',       'sounds/day_ambience.mp3',          true,  0.25);
@@ -384,28 +404,38 @@ _loadSound('campfire',      'sounds/campfire_ambience.mp3',     true,  0.2);
 _loadSound('rain_loop',     'sounds/rain.mp3',                  true,  0.0);
 _loadSound('flame_loop',    'sounds/flamethrower.mp3',          true,  0.0);
 _loadSound('zombie_loop',   'sounds/zombiesounds.mp3',          true,  0.0);
+_loadSound('river_loop',    'sounds/river_ambience.mp3',        true,  0.0);
 
 // Weapon → shot sound mapping
 const WEAPON_SHOT_SFX = {
-  pistol:'pistol_shot', revolver:'pistol_shot', deagle:'pistol_shot',
-  ak47:'ak47_shot', m4:'m4_shot',
+  pistol:'pistol_shot', deagle:'pistol_shot',
+  revolver:'revolver_shot',
+  ak47:'ak47_shot',
+  m4:'m4_shot',
   uzi:'uzi_shot', smg:'uzi_shot',
-  shotgun:'shotgun_pump',
-  rifle:'burst_shot', lmg:'burst_shot',
-  sniper:'laser_shot', railgun:'laser_shot', crossbow:'laser_shot',
-  rpg:'burst_shot', minigun:'uzi_shot',
+  shotgun:'shotgun_shot',
+  rifle:'rifle_shot',
+  lmg:'burst_shot',
+  sniper:'laser_shot', railgun:'laser_shot',
+  crossbow:'crossbow_shot',
+  rpg:'rpg_shot',
+  minigun:'uzi_shot',
   flamethrower:null, // handled by loop
 };
 
 // Weapon → reload sound mapping
 const WEAPON_RELOAD_SFX = {
-  pistol:'pistol_reload', revolver:'pistol_reload', deagle:'pistol_reload',
+  pistol:'pistol_reload', deagle:'pistol_reload',
   uzi:'pistol_reload', smg:'pistol_reload',
-  shotgun:'shotgun_pump',
+  revolver:'revolver_reload',
+  shotgun:'shotgun_reload',
   ak47:'ak47_reload',
-  m4:'m4_reload', rifle:'m4_reload', lmg:'m4_reload',
-  sniper:'ak47_reload', railgun:'ak47_reload', crossbow:'ak47_reload',
-  rpg:'ak47_reload', minigun:'m4_reload', flamethrower:'pistol_reload',
+  m4:'m4_reload', lmg:'m4_reload',
+  rifle:'rifle_reload',
+  crossbow:'crossbow_reload',
+  rpg:'rpg_reload',
+  sniper:'ak47_reload', railgun:'ak47_reload',
+  minigun:'m4_reload', flamethrower:'pistol_reload',
 };
 
 function playSound(key, pitchVariance=0) {
@@ -483,6 +513,20 @@ function updateAmbience() {
     startLoop('rain_loop', 0.3);
   } else {
     stopLoop('rain_loop', 1000);
+  }
+  // River — volume based on proximity to nearest water tile
+  if (G.player && mapTiles.length) {
+    const px = Math.floor(G.player.x/TILE), py = Math.floor(G.player.y/TILE);
+    let nearestWaterDist = 999;
+    for (let dy=-8; dy<=8; dy++) for (let dx=-8; dx<=8; dx++) {
+      const tx=px+dx, ty=py+dy;
+      if (tx>=0&&ty>=0&&tx<MAP_W&&ty<MAP_H&&mapTiles[ty][tx]==='water') {
+        nearestWaterDist = Math.min(nearestWaterDist, Math.hypot(dx,dy));
+      }
+    }
+    const riverVol = Math.max(0, 0.28 - nearestWaterDist*0.035);
+    if (riverVol > 0.01) { startLoop('river_loop', riverVol); }
+    else stopLoop('river_loop', 1500);
   }
 }
 
@@ -1088,6 +1132,7 @@ function tryLoot() {
     if (Math.hypot(px-obj.x, py-obj.y) > 40) continue;
     // Loot it
     obj.looted = true;
+    playSound('loot', 0.1);
     const reward = obj.def.loot();
     let msgs = [];
     if (reward.money > 0) {
@@ -1190,7 +1235,7 @@ function spawnZombie(type) {
   const def = ZOMBIE_TYPES[type];
   let x, y;
   // Spawn in a ring around the player — far enough not to pop in, close enough to be relevant
-  const MIN_DIST = 500, MAX_DIST = 900;
+  const MIN_DIST = 900, MAX_DIST = 1400;
   let attempts = 0;
   do {
     const angle = Math.random() * Math.PI * 2;
@@ -1276,7 +1321,7 @@ function endNightWave() {
 // ═══════════════════════════════════════════════════════════════
 function openShop() {
   G.shopOpen = true;
-  playSound('btn_click');
+  playSound('shop_open');
   document.getElementById('shop-wave').textContent = G.wave;
   document.getElementById('shop-money-val').textContent = G.money;
   renderShopTab(G.shopTab);
@@ -1797,7 +1842,7 @@ function toggleFlashlight() {
     return;
   }
   G.flashlightOn = !G.flashlightOn;
-  playSound('flashlight');
+  playSound(G.flashlightOn ? 'flashlight_on' : 'flashlight_off');
   addFloatingText(G.flashlightOn ? '🔦 Flashlight ON' : '🔦 Flashlight OFF',
     canvas.width/2, canvas.height/2 - 50, '#ffe066');
 }
@@ -1812,6 +1857,7 @@ function placeMine() {
 function throwGrenade() {
   if (G.player.inventory.grenade<=0) return;
   G.player.inventory.grenade--;
+  playSound('throw_item', 0.1);
   const angle = Math.atan2(G.mouse.y-(G.player.y-G.cam.y), G.mouse.x-(G.player.x-G.cam.x));
   G.projectiles.push({ x:G.player.x, y:G.player.y, vx:Math.cos(angle)*6, vy:Math.sin(angle)*6, type:'grenade', born:performance.now(), owner:'player' });
 }
@@ -1860,6 +1906,7 @@ function useStim() {
 function throwMolotov() {
   if ((G.player.inventory.molotov||0)<=0) return;
   G.player.inventory.molotov--;
+  playSound('throw_item', 0.1);
   const angle = Math.atan2(G.mouse.y-(G.player.y-G.cam.y), G.mouse.x-(G.player.x-G.cam.x));
   G.projectiles.push({ x:G.player.x, y:G.player.y, vx:Math.cos(angle)*5.5, vy:Math.sin(angle)*5.5, type:'molotov', born:performance.now(), owner:'player' });
 }
@@ -1914,6 +1961,7 @@ function doMelee() {
   // Visual slash effect
   G.meleeFlash = { x:G.player.x, y:G.player.y, angle, range:baseRange, born:now, hit };
   playSound('melee', 0.1);
+  if (hit > 0) setTimeout(() => playSound('melee_hit', 0.1), 80);
   addFloatingText(hit>0 ? `MELEE x${hit}` : 'MISS', G.player.x-G.cam.x, G.player.y-G.cam.y-35, hit>0?'#ff6b35':'#888');
 }
 
@@ -1973,6 +2021,10 @@ function shoot() {
   } else {
     const sfxKey = WEAPON_SHOT_SFX[slot.weapon] || 'pistol_shot';
     playSound(sfxKey, 0.08);
+    // Shotgun pump after each shot (with short delay to follow the bang)
+    if (slot.weapon === 'shotgun') {
+      setTimeout(() => playSound('shotgun_pump', 0.05), 220);
+    }
   }
   updateHUD();
 }
@@ -2000,10 +2052,11 @@ function movePlayer(dt) {
   const infPenalty = p.infection >= 50 ? 1 - (p.infection-50)/100 * 0.5 : 1;
   const jockeySlow = p._jockeySlow > 0 ? 0.4 : 1;
   if (p._jockeySlow > 0) p._jockeySlow -= dt;
-  // Water slows movement
+  // Water walk sound + river ambient
   const inWater = (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)] === 'water';
   const waterSlow = inWater ? 0.45 : 1;
   if (inWater && isMoving && Math.random()<0.15) spawnParticles(p.x,p.y,'#4a9eff',2,1.5);
+  if (inWater && isMoving && Math.random()<0.04) playSound('walk_water', 0.15);
   const sprintMult = (p.sprinting && !inWater) ? 1.85 : 1; // can't sprint in water
   const spd = (p.speed + (p.speedBonus||0) + (p.adrenalineTimer>0?1.5:0)) * infPenalty * sprintMult * jockeySlow * waterSlow * (dt/16.67);
   let dx=0, dy=0;
@@ -2383,6 +2436,7 @@ function killZombie(idx, z) {
 function explode(x,y,radius,damage,owner) {
   spawnParticles(x,y,'#ff6b35',18,6);
   spawnParticles(x,y,'#f1c40f',12,4);
+  playSound('explosion', 0.15);
   spawnParticles(x,y,'#fff',6,3);
   if (owner!=='zombie') {
     // Mark zombies in radius as dead — do NOT call killZombie here directly,
@@ -2412,6 +2466,7 @@ function updateProjectiles() {
       if (now-p.born>2000||isSolidWorld(p.x,p.y)) { explode(p.x,p.y,120,80,'player'); G.projectiles.splice(i,1); }
     } else if (p.type==='molotov') {
       if (now-p.born>1800||isSolidWorld(p.x,p.y)) {
+        playSound('molotov', 0.1);
         // Spawn fire patches
         for (let f=0;f<5;f++) {
           const fx=p.x+(Math.random()-0.5)*50, fy=p.y+(Math.random()-0.5)*50;
@@ -2733,6 +2788,8 @@ function updateReload() {
       slot.ammo += take;
       slot.reserve = (slot.reserve||0) - take;
       slot.reloading=false;
+      // Shotgun pump sound at end of reload
+      if (slot.weapon === 'shotgun') playSound('shotgun_pump', 0.05);
       updateHUD();
     }
   });
@@ -2980,6 +3037,7 @@ function tryEnterStructure() {
     }
     // Give loot
     s.looted = true;
+    playSound('loot', 0.1);
     let lootMsg = [];
     s.loot.forEach(l => {
       if (l.type === 'ammo') {
@@ -3294,12 +3352,30 @@ function drawPlayer() {
   ctx.fillStyle='#555'; ctx.fillRect(12,2,5,7);
   // Muzzle flash
   if (slot&&!slot.reloading&&G.mouse.down&&performance.now()-G.player.lastShot<70) {
-    ctx.save(); ctx.shadowColor='#ffe066'; ctx.shadowBlur=14;
-    ctx.fillStyle='rgba(255,230,80,0.9)'; ctx.beginPath(); ctx.arc(33,0,5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(33,0,2,0,Math.PI*2); ctx.fill();
+    // Draw flash at gun tip (x=33 in rotated local space)
+    ctx.save();
+    ctx.translate(33, 0);
+    ctx.shadowColor='#ffe066'; ctx.shadowBlur=18;
+    // Core white flash
+    ctx.fillStyle='rgba(255,255,255,0.95)';
+    ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+    // Orange bloom
+    ctx.fillStyle='rgba(255,200,60,0.8)';
+    ctx.beginPath(); ctx.arc(0,0,6,0,Math.PI*2); ctx.fill();
+    // Outer glow
+    ctx.fillStyle='rgba(255,160,30,0.35)';
+    ctx.beginPath(); ctx.arc(0,0,11,0,Math.PI*2); ctx.fill();
+    // Forward spike
+    ctx.fillStyle='rgba(255,240,120,0.7)';
+    ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(14,0); ctx.lineTo(0,3); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur=0;
     ctx.restore();
-    // Store muzzle flash world position for area light
-    G._muzzleFlash = { x: G.player.x + Math.cos(facing)*33, y: G.player.y + Math.sin(facing)*33, born: performance.now() };
+    // Store muzzle flash world position at the actual gun tip
+    G._muzzleFlash = {
+      x: G.player.x + Math.cos(facing)*33,
+      y: G.player.y + Math.sin(facing)*33,
+      born: performance.now()
+    };
   }
   ctx.restore(); // end gun arm rotation
 
@@ -3979,17 +4055,32 @@ function drawNightOverlay() {
   // Muzzle flash area light (very brief, punches through darkness)
   if (G._muzzleFlash) {
     const mAge = performance.now() - G._muzzleFlash.born;
-    const mDur = 60;
+    const mDur = 80;
     if (mAge < mDur) {
       const mt = 1 - mAge/mDur;
       const mx2 = G._muzzleFlash.x - G.cam.x;
       const my2 = G._muzzleFlash.y - G.cam.y;
-      const mGrad = dc.createRadialGradient(mx2,my2,0, mx2,my2,120*mt);
-      mGrad.addColorStop(0, `rgba(255,230,100,${0.9*mt})`);
-      mGrad.addColorStop(0.4, `rgba(255,200,80,${0.5*mt})`);
+      const mAngle = G.player.facing;
+      const mRadius = 160 * mt;
+      // Radial punch at tip
+      const mGrad = dc.createRadialGradient(mx2,my2,0, mx2,my2,mRadius);
+      mGrad.addColorStop(0, `rgba(255,230,100,${0.95*mt})`);
+      mGrad.addColorStop(0.3, `rgba(255,200,80,${0.6*mt})`);
       mGrad.addColorStop(1, 'rgba(0,0,0,0)');
       dc.fillStyle = mGrad;
-      dc.beginPath(); dc.arc(mx2,my2,120*mt,0,Math.PI*2); dc.fill();
+      dc.beginPath(); dc.arc(mx2,my2,mRadius,0,Math.PI*2); dc.fill();
+      // Forward cone of light
+      const coneLen = 220 * mt;
+      const coneHalf = 0.45;
+      const cGrad = dc.createRadialGradient(mx2,my2,0, mx2,my2,coneLen);
+      cGrad.addColorStop(0, `rgba(255,240,160,${0.7*mt})`);
+      cGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      dc.fillStyle = cGrad;
+      dc.beginPath();
+      dc.moveTo(mx2,my2);
+      dc.arc(mx2,my2,coneLen,mAngle-coneHalf,mAngle+coneHalf);
+      dc.closePath();
+      dc.fill();
     } else {
       G._muzzleFlash = null;
     }
@@ -4548,12 +4639,13 @@ function renderSkillTree() {
 function togglePause() {
   G.paused = !G.paused;
   if (G.paused) {
+    playSound('pause_in');
     document.getElementById('pause-menu').classList.remove('hidden');
     document.getElementById('pause-wave-num').textContent = G.wave;
     document.getElementById('pause-phase-label').textContent = G.phase === 'day' ? 'Day Phase' : 'Night Phase';
-    // Show/hide shop button based on phase
     document.getElementById('pause-shop').style.display = G.phase === 'day' ? '' : 'none';
   } else {
+    playSound('pause_out');
     document.getElementById('pause-menu').classList.add('hidden');
     G.lastTime = performance.now();
     requestAnimationFrame(gameLoop);
