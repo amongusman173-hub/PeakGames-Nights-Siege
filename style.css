@@ -59,6 +59,29 @@ body { background:#000; overflow:hidden; font-family:'Rajdhani',sans-serif; curs
 .slot-key { position:absolute; top:3px; right:5px; font-size:9px; color:#555; font-family:'Orbitron',sans-serif; }
 .slot-reload-bar { position:absolute; bottom:0; left:0; height:3px; background:#f1c40f; border-radius:0 0 8px 8px; transition:width 0.1s linear; }
 
+/* ── Inventory Bar ── */
+#inv-bar {
+  position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
+  display:flex; gap:5px; z-index:10;
+  background:rgba(0,0,0,0.55); padding:5px 8px; border-radius:10px;
+  border:1px solid rgba(255,255,255,0.07); backdrop-filter:blur(4px);
+}
+.inv-slot {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:46px; height:50px; background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1); border-radius:7px;
+  position:relative; transition:all 0.15s;
+}
+.inv-slot.has-items { border-color:rgba(241,196,15,0.35); background:rgba(241,196,15,0.06); }
+.inv-icon { font-size:18px; line-height:1; }
+.inv-count {
+  position:absolute; top:2px; right:4px;
+  font-size:11px; font-family:'Orbitron',sans-serif; font-weight:700;
+  color:#f1c40f; text-shadow:0 0 6px rgba(241,196,15,0.8);
+}
+.inv-count.zero { color:#444; text-shadow:none; }
+.inv-label { font-size:7px; color:#666; text-transform:uppercase; letter-spacing:0.3px; margin-top:1px; }
+
 /* ── Side Buttons ── */
 #side-btns { position:absolute; top:110px; right:14px; display:flex; flex-direction:column; gap:6px; z-index:10; }
 #side-btns button {

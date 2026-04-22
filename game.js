@@ -31,8 +31,8 @@ resize();
 
 // ── Constants ──────────────────────────────────────────────────
 const TILE   = 40;
-const MAP_W  = 80;  // expanded from 50
-const MAP_H  = 80;  // expanded from 50
+const MAP_W  = 120; // expanded map
+const MAP_H  = 120; // expanded map
 const BASE_X = Math.floor(MAP_W / 2);
 const BASE_Y = Math.floor(MAP_H / 2);
 
@@ -513,33 +513,19 @@ function buildPlayerFromPerks() {
 // ═══════════════════════════════════════════════════════════════
 function generateMap() {
   mapTiles = [];
+  // ── Base terrain with noise-like variation ──
   for (let y = 0; y < MAP_H; y++) {
     mapTiles[y] = [];
     for (let x = 0; x < MAP_W; x++) {
       if (x===0||y===0||x===MAP_W-1||y===MAP_H-1) { mapTiles[y][x]='wall'; continue; }
-      const r = Math.random();
-      if      (r < 0.018) mapTiles[y][x] = 'tree';
-      else if (r < 0.030) mapTiles[y][x] = 'rock';
-      else                mapTiles[y][x] = 'grass';
+      // Simple noise using sin/cos for organic feel
+      const n = Math.sin(x*0.3)*Math.cos(y*0.25) + Math.sin(x*0.7+y*0.4)*0.5;
+      if      (n > 0.8)  mapTiles[y][x] = 'rock';
+      else if (n > 0.55) mapTiles[y][x] = 'tree';
+      else               mapTiles[y][x] = 'grass';
     }
   }
 
-  // Clear base area
-  for (let dy=-6;dy<=6;dy++) for (let dx=-6;dx<=6;dx++) {
-    const tx=BASE_X+dx, ty=BASE_Y+dy;
-    if (tx>0&&ty>0&&tx<MAP_W-1&&ty<MAP_H-1) mapTiles[ty][tx]='grass';
-  }
-
-  // Main roads (cross through base)
-  for (let x=1;x<MAP_W-1;x++) mapTiles[BASE_Y][x]='road';
-  for (let y=1;y<MAP_H-1;y++) mapTiles[y][BASE_X]='road';
-  // Secondary roads
-  const r2y = Math.floor(MAP_H*0.25), r3y = Math.floor(MAP_H*0.75);
-  const r2x = Math.floor(MAP_W*0.25), r3x = Math.floor(MAP_W*0.75);
-  for (let x=1;x<MAP_W-1;x++) { mapTiles[r2y][x]='road'; mapTiles[r3y][x]='road'; }
-  for (let y=1;y<MAP_H-1;y++) { mapTiles[y][r2x]='road'; mapTiles[y][r3x]='road'; }
-
-  // ── Structures ──
   function placeRect(bx,by,bw,bh,tile) {
     for (let dy=0;dy<bh;dy++) for (let dx=0;dx<bw;dx++) {
       if (bx+dx>0&&by+dy>0&&bx+dx<MAP_W-1&&by+dy<MAP_H-1)
@@ -548,57 +534,151 @@ function generateMap() {
   }
   function clearRect(bx,by,bw,bh) { placeRect(bx,by,bw,bh,'grass'); }
 
-  // Random buildings (city blocks)
-  for (let i=0;i<40;i++) {
-    const bx=Math.floor(Math.random()*(MAP_W-16))+8;
-    const by=Math.floor(Math.random()*(MAP_H-16))+8;
-    const bw=Math.floor(Math.random()*4)+2;
-    const bh=Math.floor(Math.random()*4)+2;
-    if (Math.hypot(bx-BASE_X,by-BASE_Y)<10) continue;
+  // ── Clear large base area ──
+  for (let dy=-8;dy<=8;dy++) for (let dx=-8;dx<=8;dx++) {
+    const tx=BASE_X+dx, ty=BASE_Y+dy;
+    if (tx>0&&ty>0&&tx<MAP_W-1&&ty<MAP_H-1) mapTiles[ty][tx]='grass';
+  }
+
+  // ── Main roads (cross through base) ──
+  for (let x=1;x<MAP_W-1;x++) mapTiles[BASE_Y][x]='road';
+  for (let y=1;y<MAP_H-1;y++) mapTiles[y][BASE_X]='road';
+
+  // ── Grid of secondary roads forming city blocks ──
+  const roadSpacing = 18;
+  for (let r=roadSpacing; r<MAP_H-1; r+=roadSpacing) {
+    if (Math.abs(r-BASE_Y)>3) for (let x=1;x<MAP_W-1;x++) mapTiles[r][x]='road';
+  }
+  for (let c=roadSpacing; c<MAP_W-1; c+=roadSpacing) {
+    if (Math.abs(c-BASE_X)>3) for (let y=1;y<MAP_H-1;y++) mapTiles[y][c]='road';
+  }
+
+  // ── River cutting across the map ──
+  let riverY = Math.floor(MAP_H * 0.35);
+  for (let x=1; x<MAP_W-1; x++) {
+    riverY += Math.floor(Math.sin(x*0.18)*1.5);
+    riverY = Math.max(5, Math.min(MAP_H-6, riverY));
+    if (Math.abs(riverY - BASE_Y) < 8) continue; // don't cut through base
+    for (let w=-1; w<=1; w++) {
+      const ry = riverY+w;
+      if (ry>0&&ry<MAP_H-1) mapTiles[ry][x]='water';
+    }
+  }
+
+  // ── City blocks: dense buildings in quadrants ──
+  const cityZones = [
+    {x:Math.floor(MAP_W*0.1), y:Math.floor(MAP_H*0.1), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
+    {x:Math.floor(MAP_W*0.65), y:Math.floor(MAP_H*0.1), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
+    {x:Math.floor(MAP_W*0.1), y:Math.floor(MAP_H*0.65), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
+    {x:Math.floor(MAP_W*0.65), y:Math.floor(MAP_H*0.65), w:Math.floor(MAP_W*0.25), h:Math.floor(MAP_H*0.25)},
+  ];
+  cityZones.forEach(zone => {
+    for (let i=0; i<20; i++) {
+      const bx = zone.x + Math.floor(Math.random()*zone.w);
+      const by = zone.y + Math.floor(Math.random()*zone.h);
+      const bw = Math.floor(Math.random()*4)+2;
+      const bh = Math.floor(Math.random()*4)+2;
+      if (Math.hypot(bx-BASE_X,by-BASE_Y)<14) continue;
+      if (mapTiles[by]&&mapTiles[by][bx]==='road') continue;
+      placeRect(bx,by,bw,bh,'building');
+    }
+  });
+
+  // ── Scattered random buildings ──
+  for (let i=0;i<30;i++) {
+    const bx=Math.floor(Math.random()*(MAP_W-20))+10;
+    const by=Math.floor(Math.random()*(MAP_H-20))+10;
+    const bw=Math.floor(Math.random()*5)+2;
+    const bh=Math.floor(Math.random()*5)+2;
+    if (Math.hypot(bx-BASE_X,by-BASE_Y)<14) continue;
     placeRect(bx,by,bw,bh,'building');
   }
 
-  // Gas station (NW quadrant)
-  const gsX=Math.floor(MAP_W*0.2), gsY=Math.floor(MAP_H*0.2);
-  clearRect(gsX-2,gsY-2,10,8);
+  // ── Dense forest zones ──
+  [[10,10,12],[MAP_W-22,10,12],[10,MAP_H-22,12],[MAP_W-22,MAP_H-22,12],
+   [Math.floor(MAP_W*0.45),Math.floor(MAP_H*0.15),10],
+   [Math.floor(MAP_W*0.45),Math.floor(MAP_H*0.75),10]].forEach(([fx,fy,fr])=>{
+    for(let dy=-fr;dy<=fr;dy++) for(let dx=-fr;dx<=fr;dx++) {
+      if(Math.hypot(dx,dy)<fr && Math.random()<0.75) {
+        const tx=fx+dx, ty=fy+dy;
+        if(tx>1&&ty>1&&tx<MAP_W-2&&ty<MAP_H-2&&Math.hypot(tx-BASE_X,ty-BASE_Y)>16)
+          mapTiles[ty][tx]='tree';
+      }
+    }
+  });
+
+  // ── Rocky outcrops ──
+  for (let i=0;i<8;i++) {
+    const rx=Math.floor(Math.random()*(MAP_W-20))+10;
+    const ry=Math.floor(Math.random()*(MAP_H-20))+10;
+    if (Math.hypot(rx-BASE_X,ry-BASE_Y)<12) continue;
+    for(let dy=-3;dy<=3;dy++) for(let dx=-3;dx<=3;dx++) {
+      if(Math.hypot(dx,dy)<3+Math.random()*1.5 && Math.random()<0.8) {
+        const tx=rx+dx, ty=ry+dy;
+        if(tx>1&&ty>1&&tx<MAP_W-2&&ty<MAP_H-2) mapTiles[ty][tx]='rock';
+      }
+    }
+  }
+
+  // ── Named structures ──
+  G.structures = [];
+
+  // Gas station (NW)
+  const gsX=Math.floor(MAP_W*0.18), gsY=Math.floor(MAP_H*0.18);
+  clearRect(gsX-2,gsY-2,12,9);
   placeRect(gsX,gsY,4,3,'building');
   placeRect(gsX+5,gsY,2,2,'building');
-  G.structures = G.structures||[];
-  G.structures.push({type:'gas_station',x:gsX*TILE,y:gsY*TILE,w:6*TILE,h:3*TILE,label:'⛽ Gas Station',looted:false,
+  G.structures.push({type:'gas_station',x:gsX*TILE,y:gsY*TILE,w:7*TILE,h:4*TILE,label:'⛽ Gas Station',looted:false,
     loot:[{type:'ammo',count:30},{type:'molotov',count:2},{type:'c4',count:1}]});
 
-  // Hospital (NE quadrant)
-  const hX=Math.floor(MAP_W*0.75), hY=Math.floor(MAP_H*0.2);
-  clearRect(hX-2,hY-2,12,10);
-  placeRect(hX,hY,6,5,'building');
-  G.structures.push({type:'hospital',x:hX*TILE,y:hY*TILE,w:6*TILE,h:5*TILE,label:'🏥 Hospital',looted:false,
-    loot:[{type:'medkit',count:3},{type:'antidote',count:2},{type:'stim',count:1}]});
+  // Hospital (NE)
+  const hX=Math.floor(MAP_W*0.78), hY=Math.floor(MAP_H*0.18);
+  clearRect(hX-2,hY-2,14,11);
+  placeRect(hX,hY,8,6,'building');
+  G.structures.push({type:'hospital',x:hX*TILE,y:hY*TILE,w:8*TILE,h:6*TILE,label:'🏥 Hospital',looted:false,
+    loot:[{type:'medkit',count:4},{type:'antidote',count:3},{type:'stim',count:2}]});
 
-  // School (SW quadrant)
-  const scX=Math.floor(MAP_W*0.2), scY=Math.floor(MAP_H*0.75);
-  clearRect(scX-2,scY-2,14,10);
-  placeRect(scX,scY,8,5,'building');
-  G.structures.push({type:'school',x:scX*TILE,y:scY*TILE,w:8*TILE,h:5*TILE,label:'🏫 School',looted:false,
-    loot:[{type:'grenade',count:4},{type:'mine',count:3},{type:'barricade',count:5}]});
+  // School (SW)
+  const scX=Math.floor(MAP_W*0.18), scY=Math.floor(MAP_H*0.78);
+  clearRect(scX-2,scY-2,16,12);
+  placeRect(scX,scY,10,6,'building');
+  G.structures.push({type:'school',x:scX*TILE,y:scY*TILE,w:10*TILE,h:6*TILE,label:'🏫 School',looted:false,
+    loot:[{type:'grenade',count:5},{type:'mine',count:4},{type:'barricade',count:6}]});
 
-  // Police station (SE quadrant)
-  const psX=Math.floor(MAP_W*0.75), psY=Math.floor(MAP_H*0.75);
-  clearRect(psX-2,psY-2,10,8);
-  placeRect(psX,psY,5,4,'building');
-  G.structures.push({type:'police',x:psX*TILE,y:psY*TILE,w:5*TILE,h:4*TILE,label:'🚔 Police Station',looted:false,
-    loot:[{type:'grenade',count:3},{type:'mine',count:4},{type:'flash',count:3}]});
+  // Police station (SE)
+  const psX=Math.floor(MAP_W*0.78), psY=Math.floor(MAP_H*0.78);
+  clearRect(psX-2,psY-2,12,10);
+  placeRect(psX,psY,7,5,'building');
+  G.structures.push({type:'police',x:psX*TILE,y:psY*TILE,w:7*TILE,h:5*TILE,label:'🚔 Police Station',looted:false,
+    loot:[{type:'grenade',count:4},{type:'mine',count:5},{type:'flash',count:4}]});
 
-  // Warehouse (far corners)
-  const wX=Math.floor(MAP_W*0.1), wY=Math.floor(MAP_H*0.5);
-  clearRect(wX-1,wY-2,10,8);
-  placeRect(wX,wY,7,5,'building');
-  G.structures.push({type:'warehouse',x:wX*TILE,y:wY*TILE,w:7*TILE,h:5*TILE,label:'🏭 Warehouse',looted:false,
-    loot:[{type:'barricade',count:8},{type:'turret',count:1},{type:'sentry',count:1}]});
+  // Warehouse (W side)
+  const wX=Math.floor(MAP_W*0.08), wY=Math.floor(MAP_H*0.5);
+  clearRect(wX-1,wY-2,12,9);
+  placeRect(wX,wY,9,6,'building');
+  G.structures.push({type:'warehouse',x:wX*TILE,y:wY*TILE,w:9*TILE,h:6*TILE,label:'🏭 Warehouse',looted:false,
+    loot:[{type:'barricade',count:10},{type:'turret',count:1},{type:'sentry',count:1}]});
 
-  // Park areas (tree clusters)
-  [[15,15],[65,15],[15,65],[65,65]].forEach(([px,py])=>{
-    for(let dy=-3;dy<=3;dy++) for(let dx=-3;dx<=3;dx++) {
-      if(Math.hypot(dx,dy)<3.5 && px+dx>1&&py+dy>1&&px+dx<MAP_W-2&&py+dy<MAP_H-2)
+  // Military bunker (E side)
+  const mbX=Math.floor(MAP_W*0.88), mbY=Math.floor(MAP_H*0.5);
+  clearRect(mbX-2,mbY-2,12,10);
+  placeRect(mbX,mbY,8,6,'building');
+  G.structures.push({type:'bunker',x:mbX*TILE,y:mbY*TILE,w:8*TILE,h:6*TILE,label:'🪖 Military Bunker',looted:false,
+    loot:[{type:'grenade',count:6},{type:'c4',count:3},{type:'airstrike',count:1}]});
+
+  // Supermarket (center-ish)
+  const smX=Math.floor(MAP_W*0.55), smY=Math.floor(MAP_H*0.3);
+  clearRect(smX-2,smY-2,16,12);
+  placeRect(smX,smY,12,8,'building');
+  G.structures.push({type:'supermarket',x:smX*TILE,y:smY*TILE,w:12*TILE,h:8*TILE,label:'🛒 Supermarket',looted:false,
+    loot:[{type:'medkit',count:3},{type:'ammo',count:50},{type:'barricade',count:4}]});
+
+  // Park areas
+  [[18,18,6],[MAP_W-24,18,6],[18,MAP_H-24,6],[MAP_W-24,MAP_H-24,6],
+   [Math.floor(MAP_W*0.5),Math.floor(MAP_H*0.5)-15,5]].forEach(([px,py,pr])=>{
+    for(let dy=-pr;dy<=pr;dy++) for(let dx=-pr;dx<=pr;dx++) {
+      if(Math.hypot(dx,dy)<pr && px+dx>1&&py+dy>1&&px+dx<MAP_W-2&&py+dy<MAP_H-2
+         && Math.hypot(px+dx-BASE_X,py+dy-BASE_Y)>16)
         mapTiles[py+dy][px+dx]='tree';
     }
   });
@@ -624,24 +704,43 @@ function drawTile(c, tile, sx, sy, tileX, tileY) {
   const tx = tileX||0, ty = tileY||0;
   switch(tile) {
     case 'grass': {
-      // Base grass
-      c.fillStyle='#2a5218'; c.fillRect(sx,sy,TILE,TILE);
-      // Subtle variation
-      c.fillStyle='#2f5e1e'; c.fillRect(sx+1,sy+1,TILE-2,TILE-2);
+      // Base grass with subtle color variation per tile
+      const gv = ((tileX*7+tileY*13)%5)*3;
+      c.fillStyle=`rgb(${38+gv},${82+gv},${24+gv})`; c.fillRect(sx,sy,TILE,TILE);
+      c.fillStyle=`rgb(${42+gv},${90+gv},${28+gv})`; c.fillRect(sx+1,sy+1,TILE-2,TILE-2);
       // Grass blades
-      c.fillStyle='#3a7228';
-      for(let i=0;i<6;i++){
-        const gx=sx+4+i*6+Math.sin(tx*7+i)*2, gy=sy+6+Math.cos(ty*5+i)*4;
-        c.fillRect(gx,gy,2,4);
+      c.fillStyle=`rgb(${55+gv},${115+gv},${38+gv})`;
+      for(let i=0;i<5;i++){
+        const gx=sx+3+i*7+Math.sin(tx*7+i)*2, gy=sy+5+Math.cos(ty*5+i)*4;
+        c.fillRect(gx,gy,2,5);
       }
+      // Occasional flower/pebble
+      if ((tx*17+ty*31)%20===0) { c.fillStyle='#f1c40f'; c.beginPath(); c.arc(sx+TILE/2,sy+TILE/2,2,0,Math.PI*2); c.fill(); }
       break;
     }
     case 'road': {
-      c.fillStyle='#3a3a3a'; c.fillRect(sx,sy,TILE,TILE);
-      c.fillStyle='#444'; c.fillRect(sx+1,sy+1,TILE-2,TILE-2);
+      c.fillStyle='#2e2e2e'; c.fillRect(sx,sy,TILE,TILE);
+      c.fillStyle='#383838'; c.fillRect(sx+1,sy+1,TILE-2,TILE-2);
+      // Cracks
+      c.strokeStyle='rgba(0,0,0,0.3)'; c.lineWidth=1;
+      if ((tx+ty)%4===0) { c.beginPath(); c.moveTo(sx+5,sy+8); c.lineTo(sx+12,sy+20); c.stroke(); }
       // Lane markings
-      c.fillStyle='#555';
+      c.fillStyle='rgba(255,255,255,0.18)';
       c.fillRect(sx+TILE/2-1,sy+4,2,TILE-8);
+      break;
+    }
+    case 'water': {
+      const wt = (tx+ty)*0.4;
+      c.fillStyle='#1a4a7a'; c.fillRect(sx,sy,TILE,TILE);
+      c.fillStyle='#1e5a8a'; c.fillRect(sx+1,sy+1,TILE-2,TILE-2);
+      // Wave lines
+      c.strokeStyle='rgba(100,180,255,0.3)'; c.lineWidth=1.5;
+      for(let w=0;w<3;w++){
+        c.beginPath();
+        c.moveTo(sx+2, sy+8+w*10);
+        c.bezierCurveTo(sx+TILE*0.3, sy+5+w*10, sx+TILE*0.6, sy+11+w*10, sx+TILE-2, sy+8+w*10);
+        c.stroke();
+      }
       break;
     }
     case 'wall': {
@@ -697,7 +796,7 @@ function isSolid(ttx, tty) {
   if (ttx<0||tty<0||ttx>=MAP_W||tty>=MAP_H) return true;
   const t = mapTiles[tty][ttx];
   // Buildings are walkable — player can enter them
-  return t==='wall'||t==='tree'||t==='rock';
+  return t==='wall'||t==='tree'||t==='rock'||t==='water';
 }
 function isSolidWorld(wx, wy) {
   return isSolid(Math.floor(wx/TILE), Math.floor(wy/TILE));
@@ -1312,6 +1411,7 @@ function startGame() {
   // Show gameplay UI
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('toolbar').classList.remove('hidden');
+  document.getElementById('inv-bar').classList.remove('hidden');
   document.getElementById('side-btns').classList.remove('hidden');
   document.getElementById('crosshair').classList.remove('hidden');
   initGame();
@@ -1331,6 +1431,7 @@ function continueGame() {
   document.getElementById('main-menu').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('toolbar').classList.remove('hidden');
+  document.getElementById('inv-bar').classList.remove('hidden');
   document.getElementById('side-btns').classList.remove('hidden');
   document.getElementById('crosshair').classList.remove('hidden');
   initGame(); // build base state from perks
@@ -2262,18 +2363,43 @@ function updateWeather(dt) {
 function updateParticles(dt) {
   for (let i=G.particles.length-1;i>=0;i--) {
     const p=G.particles[i];
+    p.px=p.x; p.py=p.y; // save previous pos for trail
     p.x+=p.vx; p.y+=p.vy; p.vy+=0.06;
+    p.vx*=0.98; // slight drag
     p.life-=p.decay;
     if (p.life<=0) G.particles.splice(i,1);
   }
 }
 
-function spawnParticles(x,y,color,count,speed) {
-  // Cap total particles for performance
-  if (G.particles.length>400) return;
+function spawnParticles(x,y,color,count,speed,type) {
+  if (G.particles.length>600) return;
   for (let i=0;i<count;i++) {
     const a=Math.random()*Math.PI*2, spd=Math.random()*speed;
-    G.particles.push({ x,y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd, life:1, decay:0.03+Math.random()*0.04, color, size:2+Math.random()*3 });
+    G.particles.push({
+      x, y,
+      vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+      life:1, decay:0.025+Math.random()*0.035,
+      color, size:2+Math.random()*3,
+      type: type||'default',
+      trail: type==='ember'||type==='spark',
+      px:x, py:y, // previous position for trail
+    });
+  }
+}
+
+// Spawn a burst of sparks (directional)
+function spawnSparks(x,y,color,count,speed,angle,spread) {
+  if (G.particles.length>600) return;
+  for (let i=0;i<count;i++) {
+    const a=(angle||0)+(Math.random()-0.5)*(spread||Math.PI*2);
+    const spd=speed*0.5+Math.random()*speed;
+    G.particles.push({
+      x, y,
+      vx:Math.cos(a)*spd, vy:Math.sin(a)*spd-1,
+      life:1, decay:0.04+Math.random()*0.04,
+      color, size:1.5+Math.random()*2,
+      type:'spark', trail:true, px:x, py:y,
+    });
   }
 }
 
@@ -3210,11 +3336,30 @@ function drawBarricades() {
 function drawParticles() {
   G.particles.forEach(p => {
     const sx=p.x-G.cam.x, sy=p.y-G.cam.y;
-    ctx.globalAlpha=p.life*0.9;
+    ctx.globalAlpha = p.life * 0.9;
+
+    // Trail for sparks/embers
+    if (p.trail && (p.px!==undefined)) {
+      const psx=p.px-G.cam.x, psy=p.py-G.cam.y;
+      ctx.strokeStyle=p.color;
+      ctx.lineWidth=p.size*0.6;
+      ctx.globalAlpha=p.life*0.4;
+      ctx.beginPath(); ctx.moveTo(psx,psy); ctx.lineTo(sx,sy); ctx.stroke();
+      ctx.globalAlpha=p.life*0.9;
+    }
+
+    // Glow for bright particles
+    if (p.type==='spark'||p.type==='ember'||p.size>3) {
+      ctx.shadowColor=p.color;
+      ctx.shadowBlur=p.size*3;
+    }
+
     ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(sx,sy,p.size,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx,sy,p.size*p.life*0.5+p.size*0.5,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
   });
   ctx.globalAlpha=1;
+  ctx.lineWidth=1;
 }
 
 function drawFloatingTexts() {
@@ -3228,6 +3373,74 @@ function drawFloatingTexts() {
     ctx.shadowBlur=0;
   });
   ctx.globalAlpha=1;
+}
+
+function drawCampfireCompass() {
+  if (!G.player || !G.base) return;
+  const baseCX = G.base.x + G.base.w/2;
+  const baseCY = G.base.y + G.base.h/2;
+  const dist = Math.hypot(G.player.x - baseCX, G.player.y - baseCY);
+  const SHOW_DIST = 600; // show compass when this far from base
+  if (dist < SHOW_DIST) return;
+
+  const angle = Math.atan2(baseCY - G.player.y, baseCX - G.player.x);
+  const margin = 60;
+  const cx = canvas.width/2 + Math.cos(angle)*Math.min(dist*0.3, canvas.width/2 - margin);
+  const cy = canvas.height/2 + Math.sin(angle)*Math.min(dist*0.3, canvas.height/2 - margin);
+  // Clamp to screen edge
+  const edgeX = Math.max(margin, Math.min(canvas.width-margin, canvas.width/2 + Math.cos(angle)*(canvas.width)));
+  const edgeY = Math.max(margin, Math.min(canvas.height-margin, canvas.height/2 + Math.sin(angle)*(canvas.height)));
+
+  const now = performance.now();
+  const pulse = 0.7 + Math.sin(now*0.004)*0.3;
+
+  ctx.save();
+  ctx.translate(edgeX, edgeY);
+
+  // Outer glow ring
+  ctx.globalAlpha = pulse * 0.5;
+  ctx.strokeStyle = '#ff6b35';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = '#ff6b35';
+  ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI*2); ctx.stroke();
+
+  // Background circle
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
+
+  // Arrow pointing toward base
+  ctx.rotate(angle);
+  ctx.fillStyle = '#ff6b35';
+  ctx.shadowColor = '#ff6b35';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.moveTo(12, 0);
+  ctx.lineTo(-6, -6);
+  ctx.lineTo(-3, 0);
+  ctx.lineTo(-6, 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.rotate(-angle);
+
+  // Campfire icon
+  ctx.globalAlpha = 1;
+  ctx.font = '11px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🔥', 0, 4);
+
+  // Distance label
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = '#ff6b35';
+  ctx.font = 'bold 9px Orbitron,sans-serif';
+  ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 4;
+  ctx.fillText(Math.round(dist/TILE)+'m', 0, 32);
+  ctx.shadowBlur = 0;
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
 function drawRain() {
@@ -3471,6 +3684,16 @@ function updateHUD() {
     document.getElementById('ammo-reserve').textContent='';
     document.getElementById('gun-name-hud').textContent='No weapon';
   }
+
+  // ── Inventory bar ──
+  const invItems = ['grenade','mine','barricade','sentry','turret','medkit','molotov','c4'];
+  invItems.forEach(key => {
+    const cnt = G.player.inventory[key]||0;
+    const countEl = document.getElementById('inv-count-'+key);
+    const slotEl  = document.getElementById('inv-'+key);
+    if (countEl) { countEl.textContent=cnt; countEl.className='inv-count'+(cnt===0?' zero':''); }
+    if (slotEl)  { slotEl.classList.toggle('has-items', cnt>0); }
+  });
 }
 
 function updateToolbar() {
@@ -3868,6 +4091,7 @@ document.getElementById('pause-main-menu').addEventListener('click', () => {
   // Hide gameplay UI
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('toolbar').classList.add('hidden');
+  document.getElementById('inv-bar').classList.add('hidden');
   document.getElementById('side-btns').classList.add('hidden');
   document.getElementById('crosshair').classList.add('hidden');
   document.getElementById('main-menu').classList.remove('hidden');
@@ -3962,6 +4186,7 @@ function gameLoop(ts) {
   drawFloatingTexts();
   drawZombieCount();
   drawDownedOverlay();
+  drawCampfireCompass();
   drawInfectionWarning();
 
   } catch(e) {
