@@ -39,23 +39,23 @@ const BASE_Y = Math.floor(MAP_H / 2);
 // ── Weapon Definitions ─────────────────────────────────────────
 // drawFn: function(ctx, w, h) draws the gun clipart
 const WEAPONS = {
-  pistol:       { name:'Pistol',        damage:25,  fireRate:400,  range:350, spread:0.05, ammo:12,  maxAmmo:12,  reloadTime:1800, bulletSize:5,  speed:10, auto:false, price:0,    color:'#f1c40f', reserveAmmo:48,  maxReserve:96,  draw(c,w,h){drawPistol(c,w,h);} },
-  shotgun:      { name:'Shotgun',       damage:20,  fireRate:900,  range:250, spread:0.25, ammo:6,   maxAmmo:6,   reloadTime:700,  bulletSize:7,  speed:9,  auto:false, pellets:6, price:300,  color:'#e67e22', reserveAmmo:24,  maxReserve:48,  draw(c,w,h){drawShotgun(c,w,h);} },
-  smg:          { name:'SMG',           damage:15,  fireRate:110,  range:300, spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:2000, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
-  rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:500, spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:2200, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
-  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:700, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:3500, bulletSize:8,  speed:20, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
-  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:350, spread:0.18, ammo:200, maxAmmo:200, reloadTime:4000, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:400, maxReserve:600, draw(c,w,h){drawMinigun(c,w,h);} },
-  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:180, spread:0.4,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:200, maxReserve:400, flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
+  pistol:       { name:'Pistol',        damage:25,  fireRate:400,  range:600,  spread:0.05, ammo:12,  maxAmmo:12,  reloadTime:1800, bulletSize:5,  speed:10, auto:false, price:0,    color:'#f1c40f', reserveAmmo:48,  maxReserve:96,  draw(c,w,h){drawPistol(c,w,h);} },
+  shotgun:      { name:'Shotgun',       damage:20,  fireRate:900,  range:400,  spread:0.25, ammo:6,   maxAmmo:6,   reloadTime:700,  bulletSize:7,  speed:9,  auto:false, pellets:6, price:300,  color:'#e67e22', reserveAmmo:24,  maxReserve:48,  draw(c,w,h){drawShotgun(c,w,h);} },
+  smg:          { name:'SMG',           damage:15,  fireRate:110,  range:550,  spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:2000, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
+  rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:800,  spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:2200, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
+  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:1200, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:3500, bulletSize:8,  speed:22, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
+  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:600,  spread:0.18, ammo:200, maxAmmo:200, reloadTime:4000, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:400, maxReserve:600, draw(c,w,h){drawMinigun(c,w,h);} },
+  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:280,  spread:0.4,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:200, maxReserve:400, flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
   // ── New weapons ──
-  revolver:     { name:'Revolver',      damage:70,  fireRate:700,  range:400, spread:0.03, ammo:6,   maxAmmo:6,   reloadTime:1800, bulletSize:6,  speed:14, auto:false, price:600,  color:'#c0392b', reserveAmmo:30,  maxReserve:60,  draw(c,w,h){drawRevolver(c,w,h);} },
-  deagle:       { name:'Desert Eagle',  damage:90,  fireRate:600,  range:420, spread:0.04, ammo:7,   maxAmmo:7,   reloadTime:1800, bulletSize:7,  speed:15, auto:false, price:900,  color:'#f39c12', reserveAmmo:28,  maxReserve:56,  draw(c,w,h){drawDeagle(c,w,h);} },
-  ak47:         { name:'AK-47',         damage:35,  fireRate:130,  range:380, spread:0.09, ammo:30,  maxAmmo:30,  reloadTime:3500, bulletSize:5,  speed:14, auto:true,  price:700,  color:'#e67e22', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawAK47(c,w,h);} },
-  m4:           { name:'M4A1',          damage:30,  fireRate:100,  range:420, spread:0.06, ammo:30,  maxAmmo:30,  reloadTime:2200, bulletSize:5,  speed:15, auto:true,  price:850,  color:'#27ae60', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawM4(c,w,h);} },
-  rpg:          { name:'RPG',           damage:200, fireRate:3000, range:600, spread:0.01, ammo:1,   maxAmmo:1,   reloadTime:3500, bulletSize:12, speed:8,  auto:false, price:2000, color:'#e74c3c', reserveAmmo:3,   maxReserve:6,   explosive:3, draw(c,w,h){drawRPG(c,w,h);} },
-  crossbow:     { name:'Crossbow',      damage:120, fireRate:1200, range:550, spread:0.01, ammo:6,   maxAmmo:6,   reloadTime:3500, bulletSize:6,  speed:18, auto:false, price:1000, color:'#8e44ad', reserveAmmo:18,  maxReserve:36,  draw(c,w,h){drawCrossbow(c,w,h);} },
-  uzi:          { name:'Uzi',           damage:12,  fireRate:80,   range:250, spread:0.15, ammo:32,  maxAmmo:32,  reloadTime:1800, bulletSize:4,  speed:13, auto:true,  price:650,  color:'#16a085', reserveAmmo:96,  maxReserve:192, draw(c,w,h){drawUzi(c,w,h);} },
-  lmg:          { name:'LMG',           damage:22,  fireRate:95,   range:400, spread:0.1,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:5,  speed:14, auto:true,  price:1600, color:'#d35400', reserveAmmo:200, maxReserve:400, draw(c,w,h){drawLMG(c,w,h);} },
-  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:800, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:3500, bulletSize:10, speed:30, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  draw(c,w,h){drawRailgun(c,w,h);} },
+  revolver:     { name:'Revolver',      damage:70,  fireRate:700,  range:700,  spread:0.03, ammo:6,   maxAmmo:6,   reloadTime:1800, bulletSize:6,  speed:14, auto:false, price:600,  color:'#c0392b', reserveAmmo:30,  maxReserve:60,  draw(c,w,h){drawRevolver(c,w,h);} },
+  deagle:       { name:'Desert Eagle',  damage:90,  fireRate:600,  range:700,  spread:0.04, ammo:7,   maxAmmo:7,   reloadTime:1800, bulletSize:7,  speed:15, auto:false, price:900,  color:'#f39c12', reserveAmmo:28,  maxReserve:56,  draw(c,w,h){drawDeagle(c,w,h);} },
+  ak47:         { name:'AK-47',         damage:35,  fireRate:130,  range:650,  spread:0.09, ammo:30,  maxAmmo:30,  reloadTime:3500, bulletSize:5,  speed:14, auto:true,  price:700,  color:'#e67e22', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawAK47(c,w,h);} },
+  m4:           { name:'M4A1',          damage:30,  fireRate:100,  range:700,  spread:0.06, ammo:30,  maxAmmo:30,  reloadTime:2200, bulletSize:5,  speed:15, auto:true,  price:850,  color:'#27ae60', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawM4(c,w,h);} },
+  rpg:          { name:'RPG',           damage:450, fireRate:3000, range:900,  spread:0.01, ammo:1,   maxAmmo:1,   reloadTime:3500, bulletSize:14, speed:10, auto:false, price:2000, color:'#e74c3c', reserveAmmo:3,   maxReserve:6,   explosive:5, draw(c,w,h){drawRPG(c,w,h);} },
+  crossbow:     { name:'Crossbow',      damage:120, fireRate:1200, range:900,  spread:0.01, ammo:6,   maxAmmo:6,   reloadTime:3500, bulletSize:6,  speed:20, auto:false, price:1000, color:'#8e44ad', reserveAmmo:18,  maxReserve:36,  draw(c,w,h){drawCrossbow(c,w,h);} },
+  uzi:          { name:'Uzi',           damage:12,  fireRate:80,   range:450,  spread:0.15, ammo:32,  maxAmmo:32,  reloadTime:1800, bulletSize:4,  speed:13, auto:true,  price:650,  color:'#16a085', reserveAmmo:96,  maxReserve:192, draw(c,w,h){drawUzi(c,w,h);} },
+  lmg:          { name:'LMG',           damage:22,  fireRate:95,   range:700,  spread:0.1,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:5,  speed:14, auto:true,  price:1600, color:'#d35400', reserveAmmo:200, maxReserve:400, draw(c,w,h){drawLMG(c,w,h);} },
+  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:1400, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:3500, bulletSize:10, speed:32, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  draw(c,w,h){drawRailgun(c,w,h);} },
 };
 
 // ── Gun Clipart Drawing Functions ──────────────────────────────
@@ -391,7 +391,8 @@ _loadSound('melee_hit',      'sounds/melee-hit.ogg',                      false,
 _loadSound('take_damage',    'sounds/take_damage.wav',                    false, 0.7);
 _loadSound('flashlight_on',  'sounds/flashlight-on.ogg',                  false, 0.85);
 _loadSound('flashlight_off', 'sounds/flashlight-off.ogg',                 false, 0.85);
-_loadSound('night_vision',   'sounds/night-vision.wav',                   false, 0.6);
+_loadSound('night_vision_on',  'sounds/nightvision-on.ogg',                false, 0.65);
+_loadSound('night_vision_off', 'sounds/nightvision-off.ogg',               false, 0.65);
 _loadSound('btn_click',      'sounds/buttonclick.mp3',                    false, 0.5);
 _loadSound('shop_open',      'sounds/Open shop doorbell - Creator Store.ogg', false, 0.55);
 _loadSound('throw_item',     'sounds/throw-item.ogg',                     false, 0.6);
@@ -1371,7 +1372,7 @@ function renderShopTab(tab) {
       { key:'fullheal',   name:'Full Heal',     icon:'💖', price:Math.floor(400*(1-disc)),  category:'service', desc:'Fully restore HP' },
       { key:'baserepair', name:'Base Repair',   icon:'🏠', price:Math.floor(250*(1-disc)),  category:'service', desc:'Restore 200 base HP' },
       { key:'basefull',   name:'Base Full Fix',  icon:'🏰', price:Math.floor(600*(1-disc)),  category:'service', desc:'Fully restore base HP' },
-      { key:'ammo',       name:'Ammo Pack',     icon:'📦', price:Math.floor(80*(1-disc)),   category:'service', desc:'Refill all weapons' },
+      { key:'ammo',       name:'Ammo Pack',     icon:'📦', price:Math.floor(80*(1-disc)),   category:'service', desc:'+50% reserve ammo per weapon' },
       { key:'infection',  name:'Cure Infection',icon:'🧪', price:Math.floor(200*(1-disc)),  category:'service', desc:'Clear all infection' },
       { key:'cure_full',  name:'Full Cure',      icon:'💉', price:Math.floor(350*(1-disc)),  category:'service', desc:'Clear infection + reset death timer' },
       // Fort upgrade
@@ -1581,9 +1582,15 @@ function buyItem(item) {
     }
     if (item.key==='fort_max') return; // nothing to buy
     if (item.key==='ammo') {
+      // Give a fixed ammo pack — 50% of max reserve per weapon
       G.player.slots.forEach(s=>{
-        if (s) { const wDef=WEAPONS[s.weapon]; s.reserve=wDef.maxReserve; s.ammo=wDef.maxAmmo; }
+        if (s) {
+          const wDef=WEAPONS[s.weapon];
+          const add = Math.ceil(wDef.maxReserve * 0.5);
+          s.reserve = Math.min(wDef.maxReserve, (s.reserve||0) + add);
+        }
       });
+      addFloatingText('+50% ammo per weapon', canvas.width/2, canvas.height/2-40, '#f1c40f');
     }
     G.money -= item.price;
   }
@@ -1639,27 +1646,25 @@ document.addEventListener('keydown', e => {
 
   if (G.paused) return;
 
-  if (e.code==='KeyR') reloadWeapon();
-  if (e.code==='KeyN') toggleNightVision();
-  if (e.code==='KeyF') {
-    if (G.phase==='night') toggleFlashlight();
-    else tryLoot();
-  }
-  if (e.code==='KeyM') placeMine();
-  if (e.code==='KeyG') throwGrenade();
-  if (e.code==='KeyE') {
-    if (G.phase==='day' && tryOpenShopNearCampfire()) { /* opened shop */ }
-    else if (tryEnterStructure()) { /* entered structure */ }
+  if (e.code==='KeyR') reloadWeapon();                 // R = Reload
+  if (e.code==='KeyV') doMelee();                       // V = Melee
+  if (e.code==='KeyF') toggleFlashlight();              // F = Flashlight (works day & night)
+  if (e.code==='KeyN') toggleNightVision();             // N = Night Vision
+  if (e.code==='KeyE') {                                // E = Interact / Medkit / Loot / Shop
+    if (G.phase==='day' && tryOpenShopNearCampfire()) { /* shop */ }
+    else if (tryEnterStructure()) { /* structure */ }
     else if (G.player.inventory.medkit>0) useMedkit();
     else tryLoot();
   }
-  if (e.code==='KeyQ') useAntidote();
-  if (e.code==='KeyT') placeTurret();
-  if (e.code==='KeyB') placeBarricade();
-  if (e.code==='KeyZ') useStim();
-  if (e.code==='KeyX') throwMolotov();
-  if (e.code==='KeyC') callAirstrike();
-  if (e.code==='KeyV') doMelee();
+  if (e.code==='KeyG') throwGrenade();                  // G = Grenade
+  if (e.code==='KeyH') placeMine();                     // H = Mine
+  if (e.code==='KeyT') throwMolotov();                  // T = Molotov
+  if (e.code==='KeyY') callAirstrike();                 // Y = Airstrike
+  if (e.code==='KeyQ') useAntidote();                   // Q = Antidote
+  if (e.code==='KeyZ') useStim();                       // Z = Stim
+  if (e.code==='KeyB') placeBarricade();                // B = Barricade
+  if (e.code==='KeyU') placeTurret();                   // U = Turret
+  if (e.code==='KeyL') tryLoot();                       // L = Loot (explicit)
   if (e.code==='Tab')  { e.preventDefault(); if(G.phase==='day') G.shopOpen ? closeShopOnly() : openShop(); }
   if (e.code==='Digit1') selectSlot(0);
   if (e.code==='Digit2') selectSlot(1);
@@ -1846,15 +1851,10 @@ function toggleNightVision() {
   }
   G.nightVisionActive = !G.nightVisionActive;
   document.getElementById('nv-btn').classList.toggle('active', G.nightVisionActive);
-  // Different pitch for on vs off to simulate reversed sound
-  const src = SFX['night_vision'];
-  if (src && _audioUnlocked) {
-    try {
-      const clone = src.cloneNode();
-      clone.volume = src.volume;
-      clone.playbackRate = G.nightVisionActive ? 1.0 : 0.65; // lower pitch = "powering down"
-      clone.play().catch(()=>{});
-    } catch(e) {}
+  // Separate on/off sounds
+  const nvSfx = SFX[G.nightVisionActive ? 'night_vision_on' : 'night_vision_off'];
+  if (nvSfx && _audioUnlocked) {
+    try { const c=nvSfx.cloneNode(); c.volume=nvSfx.volume; c.play().catch(()=>{}); } catch(e) {}
   }
 }
 
@@ -3568,28 +3568,6 @@ function drawZombies() {
     }
     ctx.globalAlpha = zombieAlpha;
 
-    // NV Detection highlight — outline all zombies when active
-    if (G.nightVisionActive && G.player.nvDetection) {
-      const dist = Math.hypot(z.x-G.player.x, z.y-G.player.y);
-      if (dist < 800) {
-        ctx.save();
-        ctx.globalAlpha = 0.7;
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 2;
-        ctx.shadowColor = '#00ff88';
-        ctx.shadowBlur = 8;
-        ctx.beginPath(); ctx.arc(sx, sy, sz+4, 0, Math.PI*2); ctx.stroke();
-        // Distance label
-        ctx.font = 'bold 9px Orbitron,sans-serif';
-        ctx.fillStyle = '#00ff88';
-        ctx.textAlign = 'center';
-        ctx.shadowBlur = 4;
-        ctx.fillText(Math.round(dist)+'m', sx, sy - sz - 6);
-        ctx.shadowBlur = 0;
-        ctx.restore();
-      }
-    }
-
     ctx.save();
     ctx.translate(sx, sy);
 
@@ -4110,6 +4088,36 @@ function drawNightOverlay() {
   dc.globalCompositeOperation = 'source-over';
   ctx.drawImage(G._darkCanvas, 0, 0);
 
+  // ── NV Zombie Detection — draw glowing outlines AFTER darkness so they show through ──
+  if (G.nightVisionActive && G.player.nvDetection) {
+    const now_nv = performance.now();
+    G.zombies.forEach(z => {
+      const dist = Math.hypot(z.x-G.player.x, z.y-G.player.y);
+      if (dist > 900) return;
+      const sx = z.x-G.cam.x, sy = z.y-G.cam.y;
+      if (sx<-60||sx>canvas.width+60||sy<-60||sy>canvas.height+60) return;
+      const pulse = 0.7 + Math.sin(now_nv*0.006 + z.x*0.01)*0.3;
+      // Filled glow circle so zombie is visible through darkness
+      const gGrad = ctx.createRadialGradient(sx,sy,0, sx,sy,z.size+10);
+      gGrad.addColorStop(0, `rgba(0,255,100,${0.45*pulse})`);
+      gGrad.addColorStop(0.5, `rgba(0,200,80,${0.25*pulse})`);
+      gGrad.addColorStop(1, 'rgba(0,255,80,0)');
+      ctx.fillStyle = gGrad;
+      ctx.beginPath(); ctx.arc(sx,sy,z.size+10,0,Math.PI*2); ctx.fill();
+      // Bright outline
+      ctx.strokeStyle = `rgba(0,255,100,${0.9*pulse})`;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#00ff64'; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(sx,sy,z.size+3,0,Math.PI*2); ctx.stroke();
+      ctx.shadowBlur = 0;
+      // Distance label
+      ctx.fillStyle = `rgba(0,255,100,${0.8*pulse})`;
+      ctx.font = 'bold 9px Orbitron,sans-serif'; ctx.textAlign='center';
+      ctx.fillText(Math.round(dist)+'m', sx, sy-z.size-8);
+    });
+    ctx.lineWidth = 1;
+  }
+
   // ── Post-composite overlays (tints drawn on top of the revealed world) ──
 
   // Warm flashlight tint
@@ -4269,11 +4277,11 @@ function drawQuickUseHUD() {
   const inv = G.player.inventory;
   const items = [
     { key:'G', icon:'💥', count:inv.grenade||0,  label:'Grenade' },
-    { key:'M', icon:'💣', count:inv.mine||0,     label:'Mine'    },
-    { key:'X', icon:'🍾', count:inv.molotov||0,  label:'Molotov' },
-    { key:'C', icon:'✈',  count:inv.airstrike||0,label:'Strike'  },
+    { key:'H', icon:'💣', count:inv.mine||0,     label:'Mine'    },
+    { key:'T', icon:'🍾', count:inv.molotov||0,  label:'Molotov' },
+    { key:'Y', icon:'✈',  count:inv.airstrike||0,label:'Strike'  },
     { key:'B', icon:'🧱', count:inv.barricade||0, label:'Barricade'},
-    { key:'T', icon:'🗼', count:inv.turret||0,   label:'Turret'  },
+    { key:'U', icon:'🗼', count:inv.turret||0,   label:'Turret'  },
     { key:'V', icon:'⚔',  count:-1,              label:'Melee'   },
   ];
   const slotW = 44, slotH = 44, gap = 4;
@@ -4333,6 +4341,9 @@ function updateHUD() {
   document.getElementById('base-text').textContent=Math.ceil(G.base.hp);
   document.getElementById('money-text').textContent=G.money;
   document.getElementById('kills-text').textContent=G.totalKills;
+  // Medkit count
+  const mkEl = document.getElementById('medkit-count');
+  if (mkEl) mkEl.textContent = G.player.inventory.medkit||0;
 
   // Battery bar
   const bat = G.flashlightBattery||0;

@@ -31,6 +31,11 @@
         <div class="bar-track"><div id="stamina-fill" class="bar-fill" style="background:linear-gradient(90deg,#e67e22,#f39c12);width:100%"></div></div>
         <span class="bar-val" id="stamina-text">100%</span>
       </div>
+      <div id="medkit-hud" title="Medkits [E]" style="margin-top:4px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:16px">💊</span>
+        <span id="medkit-count" style="font-family:'Orbitron',sans-serif;font-size:13px;color:#2ecc71;font-weight:700;">0</span>
+        <span style="font-size:10px;color:#555;font-family:'Rajdhani',sans-serif;">MEDKITS [E]</span>
+      </div>
       <div id="ammo-block">
         <span id="ammo-cur">12</span><span id="ammo-sep">/</span><span id="ammo-max">12</span>
         <span id="ammo-reserve-label" style="color:#555;margin:0 5px;font-size:14px">|</span><span id="ammo-reserve" style="font-size:14px;color:#888;font-family:'Orbitron',sans-serif">48</span>
@@ -192,17 +197,24 @@
         <div class="howto-section"><h3>🎮 Controls</h3>
           <div class="howto-grid">
             <span>WASD / Arrows</span><span>Move</span>
+            <span>Shift</span><span>Sprint</span>
             <span>Mouse</span><span>Aim</span>
             <span>Left Click / Hold</span><span>Shoot</span>
             <span>1–5 / Scroll</span><span>Switch weapon slot</span>
             <span>R</span><span>Reload</span>
-            <span>N</span><span>Toggle Night Vision</span>
-            <span>F</span><span>Place Mine</span>
+            <span>V</span><span>Melee</span>
+            <span>F</span><span>Flashlight</span>
+            <span>N</span><span>Night Vision</span>
+            <span>E</span><span>Interact / Medkit / Loot / Shop</span>
             <span>G</span><span>Throw Grenade</span>
-            <span>E</span><span>Use Med Kit</span>
+            <span>H</span><span>Place Mine</span>
+            <span>T</span><span>Throw Molotov</span>
+            <span>Y</span><span>Call Airstrike</span>
             <span>Q</span><span>Use Antidote</span>
-            <span>T</span><span>Place Turret</span>
+            <span>Z</span><span>Use Stim Pack</span>
             <span>B</span><span>Place Barricade</span>
+            <span>U</span><span>Place Turret</span>
+            <span>L</span><span>Loot nearby</span>
             <span>Tab</span><span>Open Shop (day)</span>
             <span>Escape</span><span>Pause</span>
           </div>
@@ -259,13 +271,19 @@
       </div>
       <div id="pause-controls">
         <div class="pc-row"><span>WASD</span><span>Move</span></div>
+        <div class="pc-row"><span>Shift</span><span>Sprint</span></div>
         <div class="pc-row"><span>Mouse</span><span>Aim &amp; Shoot</span></div>
         <div class="pc-row"><span>R</span><span>Reload</span></div>
-        <div class="pc-row"><span>1–5</span><span>Switch weapon</span></div>
-        <div class="pc-row"><span>E / Q</span><span>Med Kit / Antidote</span></div>
-        <div class="pc-row"><span>F / G</span><span>Mine / Grenade</span></div>
-        <div class="pc-row"><span>T / B</span><span>Turret / Barricade</span></div>
+        <div class="pc-row"><span>V</span><span>Melee</span></div>
+        <div class="pc-row"><span>F</span><span>Flashlight</span></div>
         <div class="pc-row"><span>N</span><span>Night Vision</span></div>
+        <div class="pc-row"><span>1–5</span><span>Switch weapon</span></div>
+        <div class="pc-row"><span>E</span><span>Medkit / Loot / Shop</span></div>
+        <div class="pc-row"><span>Q</span><span>Antidote</span></div>
+        <div class="pc-row"><span>G / H</span><span>Grenade / Mine</span></div>
+        <div class="pc-row"><span>T / Y</span><span>Molotov / Airstrike</span></div>
+        <div class="pc-row"><span>B / U</span><span>Barricade / Turret</span></div>
+        <div class="pc-row"><span>Z</span><span>Stim Pack</span></div>
         <div class="pc-row"><span>Tab</span><span>Shop (day)</span></div>
         <div class="pc-row"><span>Esc</span><span>Pause</span></div>
       </div>
