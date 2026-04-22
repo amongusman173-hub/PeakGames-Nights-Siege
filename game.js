@@ -3916,6 +3916,21 @@ function gameLoop(ts) {
   updateWeather(dt);
   updateToolbar();
   if (G.player.sprinting !== G._lastSprint) { G._lastSprint=G.player.sprinting; updateHUD(); }
+  // Update stamina and battery bars every frame so they drain/fill smoothly
+  const _sf = document.getElementById('stamina-fill');
+  const _st = document.getElementById('stamina-text');
+  if (_sf) {
+    const _s = G.player.stamina || 0;
+    _sf.style.width = _s + '%';
+    _sf.style.background = G.player.sprinting ? 'linear-gradient(90deg,#e74c3c,#f39c12)' : (G.player.sprintExhausted ? '#e74c3c' : 'linear-gradient(90deg,#e67e22,#f39c12)');
+    if (_st) _st.textContent = G.player.sprinting ? 'SPRINT' : (G.player.sprintExhausted ? 'TIRED' : Math.floor(_s) + '%');
+  }
+  const _bf = document.getElementById('battery-bar-fill');
+  if (_bf) {
+    const _b = G.flashlightBattery || 0;
+    _bf.style.width = _b + '%';
+    _bf.style.background = _b > 50 ? 'linear-gradient(90deg,#2ecc71,#f1c40f)' : _b > 20 ? '#f39c12' : '#e74c3c';
+  }
   } // end downed else
 
   // ── Draw ──
