@@ -2107,18 +2107,23 @@ function movePlayer(dt) {
   const infPenalty = p.infection >= 50 ? 1 - (p.infection-50)/100 * 0.5 : 1;
   const jockeySlow = p._jockeySlow > 0 ? 0.4 : 1;
   if (p._jockeySlow > 0) p._jockeySlow -= dt;
-  // Water walk sound + river ambient
+  // Water walk sound + splash particles
   const inWater = (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)] === 'water';
   const waterSlow = inWater ? 0.45 : 1;
-  if (inWater && isMoving && Math.random()<0.15) spawnParticles(p.x,p.y,'#4a9eff',2,1.5);
   if (inWater && isMoving) {
+    // Splash particles (throttled)
+    if (!p._lastWaterSplash) p._lastWaterSplash = 0;
+    const nowW = performance.now();
+    if (nowW - p._lastWaterSplash > 180) {
+      p._lastWaterSplash = nowW;
+      spawnParticles(p.x, p.y, '#4a9eff', 2, 1.5);
+    }
+    // Water step sound (separate, slower cadence)
     if (!p._lastWaterStep) p._lastWaterStep = 0;
-    const now3 = performance.now();
-    if (now3 - p._lastWaterStep > 500) {
-      p._lastWaterStep = now3;
+    if (nowW - p._lastWaterStep > 520) {
+      p._lastWaterStep = nowW;
       playSound('walk_water', 0.1);
     }
-    if (Math.random()<0.15) spawnParticles(p.x,p.y,'#4a9eff',2,1.5);
   }
 
   // Footstep sounds
@@ -2821,13 +2826,17 @@ function updateWeather(dt) {
 }
 
 function updateParticles(dt) {
+  const camX=G.cam.x, camY=G.cam.y, cW=canvas.width+60, cH=canvas.height+60;
   for (let i=G.particles.length-1;i>=0;i--) {
     const p=G.particles[i];
-    p.px=p.x; p.py=p.y; // save previous pos for trail
+    p.px=p.x; p.py=p.y;
     p.x+=p.vx; p.y+=p.vy; p.vy+=0.06;
-    p.vx*=0.98; // slight drag
+    p.vx*=0.98;
     p.life-=p.decay;
-    if (p.life<=0) G.particles.splice(i,1);
+    if (p.life<=0) { G.particles.splice(i,1); continue; }
+    // Remove particles that have drifted far off-screen
+    const sx=p.x-camX, sy=p.y-camY;
+    if (sx<-80||sx>cW||sy<-80||sy>cH) p.life-=0.05; // accelerate fade when off-screen
   }
 }
 
@@ -3399,17 +3408,50 @@ function drawPlayer() {
                    G.keys['ArrowUp']||G.keys['ArrowDown']||G.keys['ArrowLeft']||G.keys['ArrowRight'];
   const walk = isMoving ? Math.sin(performance.now()*0.012) : 0;
 
-  // Sprint trail
+  // Sprint VFX
   if (G.player.sprinting && isMoving) {
-    const trailAngle = facing + Math.PI; // behind player
-    for (let i=1;i<=3;i++) {
-      const tx = px + Math.cos(trailAngle)*i*10;
-      const ty = py + Math.sin(trailAngle)*i*10;
-      ctx.globalAlpha = 0.15/i;
-      ctx.fillStyle='#74b9ff';
-      ctx.beginPath(); ctx.ellipse(tx,ty,10-i*2,4,0,0,Math.PI*2); ctx.fill();
+    const trailAngle = facing + Math.PI;
+    const now_s = performance.now();
+
+    // Motion blur streaks behind player
+    for (let i=1;i<=4;i++) {
+      const dist = i*12;
+      const tx = px + Math.cos(trailAngle)*dist;
+      const ty = py + Math.sin(trailAngle)*dist;
+      ctx.globalAlpha = (0.18 - i*0.04);
+      ctx.fillStyle = '#a0c4ff';
+      ctx.beginPath();
+      ctx.ellipse(tx, ty, 9-i*1.5, 3, trailAngle, 0, Math.PI*2);
+      ctx.fill();
     }
-    ctx.globalAlpha=1;
+    ctx.globalAlpha = 1;
+
+    // Speed lines radiating from sides
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(facing);
+    ctx.strokeStyle = 'rgba(160,196,255,0.25)';
+    ctx.lineWidth = 1.5;
+    for (let s=-1;s<=1;s+=2) {
+      const lineY = s * 10;
+      const flicker = Math.sin(now_s*0.03 + s)*4;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.moveTo(-8 + flicker, lineY);
+      ctx.lineTo(-28 + flicker, lineY);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    // Dust puffs spawned into world particles (throttled)
+    if (!G.player._lastDust) G.player._lastDust = 0;
+    if (now_s - G.player._lastDust > 60) {
+      G.player._lastDust = now_s;
+      const dustX = G.player.x + Math.cos(trailAngle)*8 + (Math.random()-0.5)*6;
+      const dustY = G.player.y + Math.sin(trailAngle)*8 + (Math.random()-0.5)*6;
+      spawnParticles(dustX, dustY, '#8a7a6a', 2, 1.2);
+    }
   }
 
   ctx.save();
@@ -3769,26 +3811,32 @@ function lightenColor(hex, amount) {
 }
 
 function drawBullets() {
+  // Set shadow once for all non-flame bullets, reset once at end
+  ctx.shadowBlur = 6;
   G.bullets.forEach(b => {
     const sx=b.x-G.cam.x, sy=b.y-G.cam.y;
+    // Cull off-screen
+    if (sx<-20||sx>canvas.width+20||sy<-20||sy>canvas.height+20) return;
     if (b.flame) {
+      ctx.shadowBlur = 0;
       ctx.globalAlpha=0.65;
       const fg=ctx.createRadialGradient(sx,sy,0,sx,sy,b.size/2);
       fg.addColorStop(0,'#fff'); fg.addColorStop(0.4,'#ff6b35'); fg.addColorStop(1,'rgba(255,100,0,0)');
       ctx.fillStyle=fg;
       ctx.beginPath(); ctx.arc(sx,sy,b.size/2,0,Math.PI*2); ctx.fill();
       ctx.globalAlpha=1;
+      ctx.shadowBlur = 6;
     } else {
-      ctx.shadowColor=b.color; ctx.shadowBlur=8;
+      ctx.shadowColor=b.color;
       ctx.fillStyle=b.color;
       ctx.beginPath(); ctx.arc(sx,sy,b.size/2,0,Math.PI*2); ctx.fill();
-      ctx.shadowBlur=0;
       // Trail
-      ctx.globalAlpha=0.3; ctx.fillStyle=b.color;
+      ctx.globalAlpha=0.3;
       ctx.beginPath(); ctx.arc(sx-b.vx*1.5,sy-b.vy*1.5,b.size/3,0,Math.PI*2); ctx.fill();
       ctx.globalAlpha=1;
     }
   });
+  ctx.shadowBlur=0;
 }
 
 function drawProjectiles() {
@@ -3886,12 +3934,17 @@ function drawBarricades() {
 }
 
 function drawParticles() {
+  // Batch particles by type to minimize state changes
+  let hasShadow = false;
   G.particles.forEach(p => {
     const sx=p.x-G.cam.x, sy=p.y-G.cam.y;
+    // Cull off-screen
+    if (sx<-20||sx>canvas.width+20||sy<-20||sy>canvas.height+20) return;
+
     ctx.globalAlpha = p.life * 0.9;
 
     // Trail for sparks/embers
-    if (p.trail && (p.px!==undefined)) {
+    if (p.trail && p.px!==undefined) {
       const psx=p.px-G.cam.x, psy=p.py-G.cam.y;
       ctx.strokeStyle=p.color;
       ctx.lineWidth=p.size*0.6;
@@ -3900,30 +3953,35 @@ function drawParticles() {
       ctx.globalAlpha=p.life*0.9;
     }
 
-    // Glow for bright particles
-    if (p.type==='spark'||p.type==='ember'||p.size>3) {
+    // Glow only for sparks/embers — skip for plain particles (expensive)
+    if (p.type==='spark'||p.type==='ember') {
       ctx.shadowColor=p.color;
-      ctx.shadowBlur=p.size*3;
+      ctx.shadowBlur=p.size*2;
+      hasShadow = true;
+    } else if (hasShadow) {
+      ctx.shadowBlur=0;
+      hasShadow = false;
     }
 
     ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(sx,sy,p.size*p.life*0.5+p.size*0.5,0,Math.PI*2); ctx.fill();
-    ctx.shadowBlur=0;
+    ctx.beginPath(); ctx.arc(sx,sy,Math.max(0.5, p.size*p.life*0.5+p.size*0.5),0,Math.PI*2); ctx.fill();
   });
+  if (hasShadow) ctx.shadowBlur=0;
   ctx.globalAlpha=1;
   ctx.lineWidth=1;
 }
 
 function drawFloatingTexts() {
+  ctx.font='bold 14px Rajdhani,sans-serif';
+  ctx.textAlign='center';
+  ctx.shadowBlur=4; // reduced from 6
   G.floatingTexts.forEach(t => {
     ctx.globalAlpha=t.life;
     ctx.fillStyle=t.color;
-    ctx.font='bold 14px Rajdhani,sans-serif';
-    ctx.textAlign='center';
-    ctx.shadowColor=t.color; ctx.shadowBlur=6;
+    ctx.shadowColor=t.color;
     ctx.fillText(t.text,t.x,t.y);
-    ctx.shadowBlur=0;
   });
+  ctx.shadowBlur=0;
   ctx.globalAlpha=1;
 }
 
@@ -4876,7 +4934,10 @@ function gameLoop(ts) {
   updateFloatingTexts();
   updateReload();
   updateWeather(dt);
-  updateToolbar();
+  // Throttle toolbar update — only every 100ms (it touches DOM every frame otherwise)
+  if (!G._toolbarTick) G._toolbarTick = 0;
+  G._toolbarTick += dt;
+  if (G._toolbarTick >= 100) { G._toolbarTick = 0; updateToolbar(); }
   } // end downed else
   if (!G._ambTick) G._ambTick=0;
   G._ambTick+=dt;
