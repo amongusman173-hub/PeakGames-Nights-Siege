@@ -1249,7 +1249,7 @@ function spawnZombie(type) {
   const def = ZOMBIE_TYPES[type];
   let x, y;
   // Spawn in a ring around the player — far enough not to pop in, close enough to be relevant
-  const MIN_DIST = 900, MAX_DIST = 1400;
+  const MIN_DIST = 1100, MAX_DIST = 1700;
   let attempts = 0;
   do {
     const angle = Math.random() * Math.PI * 2;
