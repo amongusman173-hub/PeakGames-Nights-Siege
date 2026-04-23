@@ -44,8 +44,8 @@ const WEAPONS = {
   smg:          { name:'SMG',           damage:15,  fireRate:110,  range:550,  spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:2000, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
   rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:800,  spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:2200, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
   sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:1200, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:3500, bulletSize:8,  speed:22, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
-  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:600,  spread:0.18, ammo:200, maxAmmo:200, reloadTime:4000, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:400, maxReserve:600, draw(c,w,h){drawMinigun(c,w,h);} },
-  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:280,  spread:0.4,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:200, maxReserve:400, flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
+  minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:600,  spread:0.18, ammo:200, maxAmmo:200, reloadTime:4000, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:600, maxReserve:1200, draw(c,w,h){drawMinigun(c,w,h);} },
+  flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:280,  spread:0.4,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:300, maxReserve:600,  flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
   // ── New weapons ──
   revolver:     { name:'Revolver',      damage:70,  fireRate:700,  range:700,  spread:0.03, ammo:6,   maxAmmo:6,   reloadTime:1800, bulletSize:6,  speed:14, auto:false, price:600,  color:'#c0392b', reserveAmmo:30,  maxReserve:60,  draw(c,w,h){drawRevolver(c,w,h);} },
   deagle:       { name:'Desert Eagle',  damage:90,  fireRate:600,  range:700,  spread:0.04, ammo:7,   maxAmmo:7,   reloadTime:1800, bulletSize:7,  speed:15, auto:false, price:900,  color:'#f39c12', reserveAmmo:28,  maxReserve:56,  draw(c,w,h){drawDeagle(c,w,h);} },
@@ -1471,6 +1471,7 @@ function renderShopTab(tab) {
       <div class="si-icon">${iconHtml}</div>
       <div class="si-name">${item.name}</div>
       ${statsHtml || `<div class="si-desc">${item.desc}</div>`}
+      <div style="flex:1"></div>
       <div class="si-price">💰 ${item.price}</div>
       ${ownedStr}
     `;
@@ -4642,12 +4643,20 @@ function updateHUD() {
     document.getElementById('ammo-sep').textContent='/';
     document.getElementById('ammo-reserve').textContent=(slot.reserve||0);
     document.getElementById('gun-name-hud').textContent=slot.reloading?'RELOADING':wDef.name;
+    // Low ammo warning: show only when ≤25% of max AND not full
+    const lowAmmoEl = document.getElementById('low-ammo-warn');
+    if (lowAmmoEl) {
+      const isLow = !slot.reloading && slot.ammo <= Math.ceil(wDef.maxAmmo * 0.25) && slot.ammo < wDef.maxAmmo;
+      lowAmmoEl.style.display = isLow ? '' : 'none';
+    }
   } else {
     document.getElementById('ammo-cur').textContent='-';
     document.getElementById('ammo-max').textContent='-';
     document.getElementById('ammo-sep').textContent='/';
     document.getElementById('ammo-reserve').textContent='';
     document.getElementById('gun-name-hud').textContent='No weapon';
+    const lowAmmoEl = document.getElementById('low-ammo-warn');
+    if (lowAmmoEl) lowAmmoEl.style.display = 'none';
   }
 
   // ── Inventory bar ──
