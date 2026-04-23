@@ -4568,35 +4568,44 @@ const ST = {
 
 let stTooltip = null;
 let stDrag = { active:false, startX:0, startY:0, scrollX:0, scrollY:0 };
-
-function showPerks() {
-  document.getElementById('perks-coins').textContent = SAVE.perkCoins;
-  document.getElementById('perks-screen').classList.remove('hidden');
-  // Reset scroll to center on root node
-  const container = document.getElementById('perks-tree-container');
-  const maxX = Math.max(...SKILL_TREE.map(n=>n.x));
-  const rootNode = SKILL_TREE.find(n=>n.id==='root');
-  if (rootNode) {
-    const rootPx = ST.PAD + rootNode.x * ST.COL + ST.NW/2;
-    container.scrollLeft = rootPx - container.clientWidth/2;
-    container.scrollTop = 0;
-  }
-  renderSkillTree();
-}
+let _stBaseCanvas = null; // cached static background
+let _stBaseDirty = true;  // needs redraw
+let _stRafPending = false; // throttle with rAF
 
 function renderSkillTree() {
+  if (_stRafPending) return;
+  _stRafPending = true;
+  requestAnimationFrame(_doRenderSkillTree);
+}
+
+function _doRenderSkillTree() {
+  _stRafPending = false;
   const stc = document.getElementById('skill-tree-canvas');
+  if (!stc) return;
   const sc = stc.getContext('2d');
 
   const maxX = Math.max(...SKILL_TREE.map(n=>n.x));
   const maxY = Math.max(...SKILL_TREE.map(n=>n.y));
   const W = (maxX+1)*ST.COL + ST.PAD*2 + ST.NW;
   const H = (maxY+1)*ST.ROW + ST.PAD*2 + ST.NH + ST.HEADER;
-  stc.width = W; stc.height = H;
 
-  // ── Background ──
-  sc.fillStyle = '#07090f';
-  sc.fillRect(0,0,W,H);
+  // Rebuild base canvas if dirty or size changed
+  if (_stBaseDirty || !_stBaseCanvas || _stBaseCanvas.width!==W || _stBaseCanvas.height!==H) {
+    _stBaseCanvas = document.createElement('canvas');
+    _stBaseCanvas.width = W; _stBaseCanvas.height = H;
+    _drawSkillTreeBase(_stBaseCanvas.getContext('2d'), W, H);
+    _stBaseDirty = false;
+  }
+
+  stc.width = W; stc.height = H;
+  // Blit cached base
+  sc.drawImage(_stBaseCanvas, 0, 0);
+
+  // Draw tooltip on top (cheap)
+  if (stTooltip) _drawSkillTreeTooltip(sc, W, H);
+}
+
+function _drawSkillTreeBase(sc, W, H) {
 
   // Subtle grid
   sc.strokeStyle = 'rgba(255,255,255,0.025)';
@@ -4780,44 +4789,59 @@ function renderSkillTree() {
 
     sc.globalAlpha = 1;
   });
+} // end _drawSkillTreeBase
 
-  // ── Tooltip ──
-  if (stTooltip) {
-    const node = stTooltip;
-    const lvl = getPerkLevel(node.id);
-    const nx2 = ST.PAD + node.x*ST.COL;
-    const ny2 = ST.HEADER + ST.PAD + node.y*ST.ROW;
-    const ttW = 220, ttH = 110;
-    let ttX = nx2 + ST.NW + 12;
-    let ttY = ny2;
-    if (ttX + ttW > W - 10) ttX = nx2 - ttW - 12;
-    if (ttY + ttH > H - 10) ttY = H - ttH - 10;
+function _drawSkillTreeTooltip(sc, W, H) {
+  const node = stTooltip;
+  if (!node) return;
+  const lvl = getPerkLevel(node.id);
+  const nx2 = ST.PAD + node.x*ST.COL;
+  const ny2 = ST.HEADER + ST.PAD + node.y*ST.ROW;
+  const ttW = 220, ttH = 110;
+  let ttX = nx2 + ST.NW + 12;
+  let ttY = ny2;
+  if (ttX + ttW > W - 10) ttX = nx2 - ttW - 12;
+  if (ttY + ttH > H - 10) ttY = H - ttH - 10;
 
-    sc.fillStyle = 'rgba(7,9,15,0.97)';
-    sc.strokeStyle = node.color||'#555';
-    sc.lineWidth = 2;
-    sc.shadowColor = node.color||'#555'; sc.shadowBlur = 12;
-    sc.beginPath(); sc.roundRect(ttX, ttY, ttW, ttH, 10); sc.fill(); sc.stroke();
-    sc.shadowBlur = 0;
+  sc.fillStyle = 'rgba(7,9,15,0.97)';
+  sc.strokeStyle = node.color||'#555';
+  sc.lineWidth = 2;
+  sc.shadowColor = node.color||'#555'; sc.shadowBlur = 12;
+  sc.beginPath(); sc.roundRect(ttX, ttY, ttW, ttH, 10); sc.fill(); sc.stroke();
+  sc.shadowBlur = 0;
 
-    sc.fillStyle = node.color||'#fff';
-    sc.font = 'bold 14px Rajdhani,sans-serif'; sc.textAlign = 'left';
-    sc.fillText(node.icon+' '+node.name, ttX+12, ttY+22);
+  sc.fillStyle = node.color||'#fff';
+  sc.font = 'bold 14px Rajdhani,sans-serif'; sc.textAlign = 'left';
+  sc.fillText(node.icon+' '+node.name, ttX+12, ttY+22);
 
-    sc.fillStyle = '#aaa'; sc.font = '11px Rajdhani,sans-serif';
-    const words = node.desc.split(' '); let line='', ly=ttY+40;
-    words.forEach(w => {
-      const test = line+w+' ';
-      if (sc.measureText(test).width > ttW-24) { sc.fillText(line.trim(), ttX+12, ly); line=w+' '; ly+=16; }
-      else line=test;
-    });
-    sc.fillText(line.trim(), ttX+12, ly);
+  sc.fillStyle = '#aaa'; sc.font = '11px Rajdhani,sans-serif';
+  const words = node.desc.split(' '); let line='', ly=ttY+40;
+  words.forEach(w => {
+    const test = line+w+' ';
+    if (sc.measureText(test).width > ttW-24) { sc.fillText(line.trim(), ttX+12, ly); line=w+' '; ly+=16; }
+    else line=test;
+  });
+  sc.fillText(line.trim(), ttX+12, ly);
 
-    sc.fillStyle='#555'; sc.font='10px Orbitron,sans-serif';
-    const unlocked = isPerkUnlocked(node);
-    const status = lvl>=node.maxLevel ? 'MAXED' : !unlocked ? 'LOCKED — buy parent first' : `Lv ${lvl}/${node.maxLevel} · 🪙${getPerkCost(node)}`;
-    sc.fillText(status, ttX+12, ttY+ttH-10);
+  sc.fillStyle='#555'; sc.font='10px Orbitron,sans-serif';
+  const unlocked = isPerkUnlocked(node);
+  const status = lvl>=node.maxLevel ? 'MAXED' : !unlocked ? 'LOCKED — buy parent first' : `Lv ${lvl}/${node.maxLevel} · 🪙${getPerkCost(node)}`;
+  sc.fillText(status, ttX+12, ttY+ttH-10);
+}
+
+function showPerks() {
+  document.getElementById('perks-coins').textContent = SAVE.perkCoins;
+  document.getElementById('perks-screen').classList.remove('hidden');
+  _stBaseDirty = true; // force full redraw when opening
+  const container = document.getElementById('perks-tree-container');
+  const maxX = Math.max(...SKILL_TREE.map(n=>n.x));
+  const rootNode = SKILL_TREE.find(n=>n.id==='root');
+  if (rootNode) {
+    const rootPx = ST.PAD + rootNode.x * ST.COL + ST.NW/2;
+    container.scrollLeft = rootPx - container.clientWidth/2;
+    container.scrollTop = 0;
   }
+  renderSkillTree();
 }
 
 // ── Drag to pan ──
@@ -4857,6 +4881,7 @@ function renderSkillTree() {
           writeSave(SAVE);
           document.getElementById('perks-coins').textContent=SAVE.perkCoins;
           document.getElementById('mm-coins').textContent=SAVE.perkCoins;
+          _stBaseDirty = true; // node state changed — force full redraw
           stTooltip=node; renderSkillTree();
         }
       });
