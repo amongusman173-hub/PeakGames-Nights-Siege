@@ -1801,13 +1801,15 @@ function continueGame() {
   G.money = state.money;
   G.totalKills = state.totalKills;
   G.earnedMoney = state.earnedMoney;
-  G.fortLevel = state.fortLevel;
+  G.fortLevel = Math.max(0, Math.min(3, state.fortLevel || 0));
   G.base.hp = state.base.hp;
   G.base.maxHp = state.base.maxHp;
   G.flashlightBattery = state.flashlightBattery;
   G.fortWallHp = state.fortWallHp || 0;
   G.fortWallMaxHp = state.fortWallMaxHp || 0;
   initFortWalls(); // ensure wall HP is valid
+  // Clamp base HP to maxHp (don't overwrite maxHp from tier — use saved value)
+  G.base.hp = Math.min(G.base.hp, G.base.maxHp);
   // Restore player fields
   const p = G.player;
   p.hp = state.player.hp;
@@ -1826,9 +1828,7 @@ function continueGame() {
   p.slots = state.player.slots;
   p.inventory = state.player.inventory;
   p.selectedSlot = state.player.selectedSlot;
-  // Restore fort tier HP
-  const tier = FORT_TIERS[G.fortLevel] || FORT_TIERS[0];
-  G.base.maxHp = tier.maxHp;
+  // Fort tier is already restored from save — no need to overwrite maxHp
   document.getElementById('wave-num').textContent = G.wave;
   const phaseBadge = document.getElementById('phase-badge');
   if (G.phase === 'day') {
