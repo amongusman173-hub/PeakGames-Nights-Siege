@@ -2395,12 +2395,11 @@ function moveZombies(dt) {
     }
 
     // Melee player (only if not downed)
-    if (!G.player.downed && dPlayer<z.size+14&&now-z.lastAttack>800) { z.lastAttack=now; damagePlayer(z.damage,z.infected); }
-    // Attack base
-    if (dBase<z.size+62&&now-z.lastAttack>1000) {
-      z.lastAttack=now;
+    if (!G.player.downed && dPlayer<z.size+14&&now-(z.lastAttack||0)>800) { z.lastAttack=now; damagePlayer(z.damage,z.infected); }
+    // Attack base — separate timer so player hits don't block base hits
+    if (dBase<z.size+62&&now-(z.lastBaseAttack||0)>1000) {
+      z.lastBaseAttack=now;
       if (G.fortLevel >= 2 && G.fortWallHp > 0) {
-        // Walls still standing — damage the wall
         G.fortWallHp = Math.max(0, G.fortWallHp - z.damage);
         spawnParticles(bCX,bCY,'#8B4513',3,3);
         if (G.fortWallHp <= 0) {
@@ -2409,7 +2408,6 @@ function moveZombies(dt) {
         }
         updateHUD();
       } else {
-        // No walls or walls broken — damage the base directly
         G.base.hp=Math.max(0,G.base.hp-z.damage);
         spawnParticles(bCX,bCY,'#e74c3c',3,3); updateHUD();
         if (G.base.hp<=0) triggerGameOver('base');
@@ -4427,12 +4425,12 @@ function drawNightOverlay() {
   dc.beginPath(); dc.arc(fcx,fcy,lightR,0,Math.PI*2); dc.fill();
 
   // ── Ambient circle around player ──
-  const ambGrad = dc.createRadialGradient(px,py,0, px,py,55);
+  const ambGrad = dc.createRadialGradient(px,py,0, px,py,90);
   ambGrad.addColorStop(0,   'rgba(0,0,0,1)');
-  ambGrad.addColorStop(0.6, 'rgba(0,0,0,0.8)');
+  ambGrad.addColorStop(0.5, 'rgba(0,0,0,0.85)');
   ambGrad.addColorStop(1,   'rgba(0,0,0,0)');
   dc.fillStyle = ambGrad;
-  dc.beginPath(); dc.arc(px,py,55,0,Math.PI*2); dc.fill();
+  dc.beginPath(); dc.arc(px,py,90,0,Math.PI*2); dc.fill();
 
   // ── Flashlight cone ──
   if (G.flashlightOn && G.flashlightBattery > 0) {
