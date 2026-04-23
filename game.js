@@ -4288,31 +4288,39 @@ function drawNightOverlay() {
 
 function drawDayAtmosphere() {
   const sb = G.skyBrightness || 0;
-  if (sb <= 0.01) return;
-  // Subtle sky tint — fades in with skyBrightness
+  // Early night orange — runs even at full night (sb=0)
+  const earlyNight = sb < 0.35 ? (0.35 - sb) / 0.35 : 0;
+  if (earlyNight > 0.02) {
+    ctx.fillStyle = `rgba(200,80,10,${earlyNight * 0.14})`; ctx.fillRect(0,0,canvas.width,canvas.height);
+    const enGrad = ctx.createLinearGradient(0, canvas.height*0.6, 0, canvas.height);
+    enGrad.addColorStop(0, `rgba(255,100,20,${earlyNight*0.18})`);
+    enGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = enGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  if (sb <= 0.01) return; // rest only applies during day/transition
+  // Subtle sky tint
   ctx.fillStyle=`rgba(135,206,235,${0.06*sb})`; ctx.fillRect(0,0,canvas.width,canvas.height);
   if (G.weather.fog>0) {
     ctx.fillStyle=`rgba(220,220,230,${G.weather.fog*0.45*sb})`; ctx.fillRect(0,0,canvas.width,canvas.height);
   }
-  // Sunrise/sunset glow during sky transition
-  const transitionStrength = 1 - Math.abs(sb - 0.5) * 2;
-  if (transitionStrength > 0.05) {
-    const grad = ctx.createLinearGradient(0, canvas.height*0.6, 0, canvas.height);
-    grad.addColorStop(0, `rgba(255,120,30,${transitionStrength*0.18})`);
-    grad.addColorStop(1, `rgba(255,60,0,0)`);
+  // Sunrise/sunset glow during sky transition (peaks at sb=0.5)
+  const transitionStrength = Math.max(0, 1 - Math.abs(sb - 0.5) * 2.2);
+  if (transitionStrength > 0.02) {
+    ctx.fillStyle = `rgba(255,110,20,${transitionStrength*0.22})`; ctx.fillRect(0,0,canvas.width,canvas.height);
+    const grad = ctx.createLinearGradient(0, canvas.height*0.4, 0, canvas.height);
+    grad.addColorStop(0, `rgba(255,80,0,${transitionStrength*0.32})`);
+    grad.addColorStop(0.6, `rgba(200,50,0,${transitionStrength*0.12})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
   // Sunset orange tint when day timer < 20s
   const ss = G._sunsetStrength || 0;
   if (ss > 0) {
-    // Warm orange wash
     ctx.fillStyle = `rgba(255,100,20,${ss * 0.22})`; ctx.fillRect(0,0,canvas.width,canvas.height);
-    // Horizon glow
     const hGrad = ctx.createLinearGradient(0, canvas.height*0.5, 0, canvas.height);
     hGrad.addColorStop(0, `rgba(255,80,0,${ss*0.28})`);
     hGrad.addColorStop(1, `rgba(180,40,0,0)`);
     ctx.fillStyle = hGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Darken sky slightly
     ctx.fillStyle = `rgba(20,0,0,${ss * 0.12})`; ctx.fillRect(0,0,canvas.width,canvas.height);
   }
 }
@@ -5021,11 +5029,23 @@ function gameLoop(ts) {
   // ── Draw ──
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Sky background — lerps between night (#05080f) and day (#1a2a0a) based on skyBrightness
+  // Sky background — lerps through sunset orange into night
   const sb = G.skyBrightness || 0;
-  const skyR = Math.round(5  + (26-5)  * sb);
-  const skyG = Math.round(8  + (42-8)  * sb);
-  const skyB = Math.round(15 + (10-15) * sb);
+  // Day: rgb(26,42,10) → Sunset: rgb(40,18,8) → Night: rgb(5,8,15)
+  let skyR, skyG, skyB;
+  if (sb > 0.5) {
+    // Day → Sunset (sb 1.0 to 0.5)
+    const t = (sb - 0.5) * 2; // 1=day, 0=sunset
+    skyR = Math.round(40 + (26-40)*t);
+    skyG = Math.round(18 + (42-18)*t);
+    skyB = Math.round(8  + (10-8)*t);
+  } else {
+    // Sunset → Night (sb 0.5 to 0.0)
+    const t = sb * 2; // 1=sunset, 0=night
+    skyR = Math.round(5  + (40-5)*t);
+    skyG = Math.round(8  + (18-8)*t);
+    skyB = Math.round(15 + (8-15)*t);
+  }
   ctx.fillStyle = `rgb(${skyR},${skyG},${skyB})`;
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
@@ -5042,7 +5062,7 @@ function gameLoop(ts) {
   drawProjectiles();
   drawPlayer();
   drawParticles();
-  drawDayAtmosphere();
+  drawDayAtmosphere(); // always — handles early-night orange too
   // Draw night overlay whenever sky isn't fully bright (handles transition)
   if (G.skyBrightness < 0.99) drawNightOverlay();
   drawRain(); // draw rain AFTER night overlay so it shows as dark streaks at night
