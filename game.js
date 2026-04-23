@@ -1271,12 +1271,20 @@ function spawnZombie(type) {
   }
 
   const scale = 1 + (G.wave-1)*0.12;
+  // Pre-cache color variants to avoid per-frame string parsing in drawZombies
+  const col = def.color;
   G.zombies.push({
     type, x, y,
     hp: def.hp*scale, maxHp: def.hp*scale,
     speed: def.speed*(1+(G.wave-1)*0.05),
     damage: def.damage, reward: def.reward,
-    size: def.size, color: def.color,
+    size: def.size, color: col,
+    _colorDark: darkenColor(col, 30),
+    _colorDark15: darkenColor(col, 15),
+    _colorDark10: darkenColor(col, 10),
+    _colorLight15: lightenColor(col, 15),
+    _colorLight25: lightenColor(col, 25),
+    _colorLight30: lightenColor(col, 30),
     ranged: def.ranged||false,
     explodes: def.explodes||false,
     boss: def.boss||false,
@@ -2835,25 +2843,34 @@ function updateWeather(dt) {
   if (G.weatherTimer<=0) {
     G._prevWeather = G.weather;
     G.weather=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];
-    G.weatherTimer=120000+Math.random()*180000; // 2–5 minutes between changes
-    G.weatherAlpha = 0; // start fade-in of new weather
+    G.weatherTimer=120000+Math.random()*180000;
+    G.weatherAlpha = 0;
     document.getElementById('weather-icon').textContent=G.weather.icon;
     document.getElementById('weather-text').textContent=G.weather.name;
     addFloatingText(`${G.weather.icon} ${G.weather.name}`, canvas.width/2, canvas.height/2-120, '#74b9ff');
   }
-  // Fade weather in over ~8 seconds
   if (G.weatherAlpha === undefined) G.weatherAlpha = 1;
   if (G.weatherAlpha < 1) G.weatherAlpha = Math.min(1, G.weatherAlpha + dt/8000);
 
   if (G.weather.rain) {
-    const spawnRate = Math.round(2 * G.weatherAlpha);
+    // More drops for storm
+    const isStorm = G.weather.name === 'Storm';
+    const isBlizzard = G.weather.name === 'Blizzard';
+    const spawnRate = isBlizzard ? Math.round(4*G.weatherAlpha) : isStorm ? Math.round(5*G.weatherAlpha) : Math.round(2*G.weatherAlpha);
     for (let i=0;i<spawnRate;i++) {
-      G.rainDrops.push({ x:G.cam.x+Math.random()*canvas.width, y:G.cam.y+Math.random()*canvas.height, len:7+Math.random()*7, speed:8+G.weather.wind*2, alpha:(0.25+Math.random()*0.25)*G.weatherAlpha });
+      const len = isBlizzard ? 2+Math.random()*3 : isStorm ? 10+Math.random()*8 : 7+Math.random()*7;
+      const speed = isBlizzard ? 2+Math.random()*2 : isStorm ? 14+G.weather.wind*3 : 8+G.weather.wind*2;
+      G.rainDrops.push({
+        x:G.cam.x+Math.random()*canvas.width,
+        y:G.cam.y+Math.random()*canvas.height,
+        len, speed,
+        alpha:(0.25+Math.random()*0.35)*G.weatherAlpha,
+        splash:0, // splash timer
+      });
     }
-    if (G.rainDrops.length>300) G.rainDrops.splice(0,G.rainDrops.length-300);
+    if (G.rainDrops.length>500) G.rainDrops.splice(0,G.rainDrops.length-500);
   } else {
-    // Drain rain drops when weather clears
-    if (G.rainDrops.length > 0) G.rainDrops.splice(0, Math.ceil(G.rainDrops.length * 0.01));
+    if (G.rainDrops.length > 0) G.rainDrops.splice(0, Math.ceil(G.rainDrops.length * 0.02));
   }
   if (G.weather.lightning&&Math.random()<0.00015*dt*G.weatherAlpha) { G.lightningFlash=80; playSound('lightning', 0.3); }
   if (G.lightningFlash>0) G.lightningFlash-=dt;
@@ -3187,8 +3204,8 @@ function tryEnterStructure() {
     const pDist = Math.hypot(G.player.x-(s.x+s.w/2), G.player.y-(s.y+s.h/2));
     if (pDist > 80) continue;
     if (s.looted) {
-      addFloatingText('Already looted!', canvas.width/2, canvas.height/2-40, '#888');
-      return true;
+      // Don't block — fall through to tryLoot for nearby lootables
+      continue;
     }
     // Give loot
     s.looted = true;
@@ -3695,7 +3712,7 @@ function drawZombies() {
     ctx.rotate(z.angle);
 
     // Legs
-    ctx.fillStyle=darkenColor(z.color, 30);
+    ctx.fillStyle=z._colorDark||darkenColor(z.color, 30);
     ctx.save(); ctx.translate(-sz*0.3, sz*0.3); ctx.rotate(walk*0.5);
     ctx.beginPath(); ctx.roundRect(-sz*0.18, 0, sz*0.36, sz*0.7, sz*0.1); ctx.fill();
     ctx.restore();
@@ -3706,7 +3723,7 @@ function drawZombies() {
     // Body
     ctx.fillStyle=z.color;
     ctx.beginPath(); ctx.ellipse(0, 0, sz*0.7, sz*0.85, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle=darkenColor(z.color, 15);
+    ctx.fillStyle=z._colorDark15||darkenColor(z.color, 15);
     ctx.beginPath(); ctx.ellipse(0, sz*0.1, sz*0.45, sz*0.5, 0, 0, Math.PI*2); ctx.fill();
 
     // Infected glow
@@ -3716,24 +3733,24 @@ function drawZombies() {
     }
 
     // Left arm
-    ctx.fillStyle=lightenColor(z.color, 15);
+    ctx.fillStyle=z._colorLight15||lightenColor(z.color, 15);
     ctx.save(); ctx.translate(-sz*0.7, -sz*0.1); ctx.rotate(-0.5 + walk*0.35);
     ctx.beginPath(); ctx.ellipse(0, sz*0.35, sz*0.22, sz*0.45, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle=lightenColor(z.color, 30);
+    ctx.fillStyle=z._colorLight30||lightenColor(z.color, 30);
     ctx.beginPath(); ctx.arc(0, sz*0.72, sz*0.2, 0, Math.PI*2); ctx.fill();
     ctx.restore();
     // Right arm
-    ctx.fillStyle=lightenColor(z.color, 15);
+    ctx.fillStyle=z._colorLight15||lightenColor(z.color, 15);
     ctx.save(); ctx.translate(sz*0.7, -sz*0.1); ctx.rotate(0.5 - walk*0.35);
     ctx.beginPath(); ctx.ellipse(0, sz*0.35, sz*0.22, sz*0.45, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle=lightenColor(z.color, 30);
+    ctx.fillStyle=z._colorLight30||lightenColor(z.color, 30);
     ctx.beginPath(); ctx.arc(0, sz*0.72, sz*0.2, 0, Math.PI*2); ctx.fill();
     ctx.restore();
 
     // Head
-    ctx.fillStyle=lightenColor(z.color, 25);
+    ctx.fillStyle=z._colorLight25||lightenColor(z.color, 25);
     ctx.beginPath(); ctx.ellipse(0, -sz*0.55, sz*0.5, sz*0.52, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle=darkenColor(z.color, 10);
+    ctx.fillStyle=z._colorDark10||darkenColor(z.color, 10);
     ctx.beginPath(); ctx.ellipse(0, -sz*0.6, sz*0.3, sz*0.28, 0, 0, Math.PI*2); ctx.fill();
     // Eyes
     const eyeX=sz*0.18, eyeY=-sz*0.6;
@@ -4128,42 +4145,113 @@ function drawCampfireCompass() {
 function drawRain() {
   if (!G.weather.rain) return;
   const isBlizzard = G.weather.name === 'Blizzard';
+  const isStorm = G.weather.name === 'Storm';
   const isNight = G.phase === 'night';
+  const alpha = G.weatherAlpha || 1;
 
   if (isBlizzard) {
-    // Snow — white dots drifting sideways
-    ctx.fillStyle = 'rgba(220,235,255,0.7)';
-    G.rainDrops.forEach(r => {
+    // ── Blizzard: layered snow ──
+    // Far layer (small, slow)
+    ctx.fillStyle = 'rgba(200,220,255,0.4)';
+    G.rainDrops.forEach((r, i) => {
       const sx=r.x-G.cam.x, sy=r.y-G.cam.y;
-      ctx.globalAlpha = r.alpha * 0.8;
-      const sz = 1.5 + (r.len/14)*2; // vary size
-      ctx.beginPath(); ctx.arc(sx, sy, sz, 0, Math.PI*2); ctx.fill();
-      r.y += r.speed * 0.4; // fall slowly
-      r.x += G.weather.wind * 3 + Math.sin(r.y*0.05)*0.5; // drift
-      if (r.y > G.cam.y+canvas.height+20 || r.x > G.cam.x+canvas.width+40) {
+      if (i % 3 === 0) { // every 3rd drop is a far flake
+        ctx.globalAlpha = r.alpha * 0.5;
+        ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI*2); ctx.fill();
+      }
+    });
+    // Near layer (bigger, faster)
+    ctx.fillStyle = 'rgba(230,240,255,0.85)';
+    G.rainDrops.forEach((r, i) => {
+      const sx=r.x-G.cam.x, sy=r.y-G.cam.y;
+      if (i % 3 !== 0) {
+        ctx.globalAlpha = r.alpha;
+        const sz = 1.2 + (r.len/5)*1.5;
+        ctx.beginPath(); ctx.arc(sx, sy, sz, 0, Math.PI*2); ctx.fill();
+      }
+      r.y += r.speed * 0.5;
+      r.x += G.weather.wind * 2.5 + Math.sin(r.y*0.04 + r.x*0.02)*0.8;
+      if (r.y > G.cam.y+canvas.height+20 || r.x > G.cam.x+canvas.width+60) {
         r.y = G.cam.y - 10; r.x = G.cam.x + Math.random()*canvas.width;
       }
     });
     ctx.globalAlpha = 1;
     // Frost vignette
-    const frost = ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.3, canvas.width/2,canvas.height/2,canvas.height*0.8);
+    const frost = ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.25, canvas.width/2,canvas.height/2,canvas.height*0.85);
     frost.addColorStop(0, 'rgba(180,210,255,0)');
-    frost.addColorStop(1, 'rgba(180,210,255,0.18)');
+    frost.addColorStop(1, `rgba(180,210,255,${0.22*alpha})`);
     ctx.fillStyle = frost; ctx.fillRect(0,0,canvas.width,canvas.height);
-    // Slight white overlay for whiteout feel
-    ctx.fillStyle = 'rgba(220,235,255,0.07)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Whiteout tint
+    ctx.fillStyle = `rgba(220,235,255,${0.06*alpha})`; ctx.fillRect(0,0,canvas.width,canvas.height);
+
   } else {
-    // Rain
-    ctx.strokeStyle = isNight ? 'rgba(80,100,140,0.5)' : 'rgba(150,200,255,0.35)';
-    ctx.lineWidth = 1;
+    // ── Rain / Storm ──
+    const windAngle = Math.atan2(G.weather.wind * 2, G.weather.wind > 0 ? 8 : -8);
+    const dropColor = isNight
+      ? `rgba(60,80,120,${0.55*alpha})`
+      : isStorm
+        ? `rgba(100,130,180,${0.5*alpha})`
+        : `rgba(140,190,255,${0.38*alpha})`;
+
+    ctx.strokeStyle = dropColor;
+    ctx.lineWidth = isStorm ? 1.5 : 1;
+    ctx.lineCap = 'round';
+
     G.rainDrops.forEach(r => {
       const sx=r.x-G.cam.x, sy=r.y-G.cam.y;
-      ctx.globalAlpha = isNight ? r.alpha*0.6 : r.alpha;
-      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+G.weather.wind*2,sy+r.len); ctx.stroke();
+      // Cull off-screen
+      if (sx<-20||sx>canvas.width+20||sy<-20||sy>canvas.height+20) {
+        r.y+=r.speed; r.x+=G.weather.wind;
+        if (r.y>G.cam.y+canvas.height+20) { r.y=G.cam.y-10; r.x=G.cam.x+Math.random()*canvas.width; }
+        return;
+      }
+      ctx.globalAlpha = isNight ? r.alpha*0.55 : r.alpha;
+      const ex = sx + G.weather.wind*1.5;
+      const ey = sy + r.len;
+      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke();
+
+      // Splash ring when drop hits bottom of screen area
+      if (r.splash > 0) {
+        ctx.globalAlpha = r.splash * 0.3;
+        ctx.strokeStyle = isNight ? 'rgba(80,100,160,0.4)' : 'rgba(160,200,255,0.4)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.arc(sx, ey, (1-r.splash)*6, 0, Math.PI*2); ctx.stroke();
+        ctx.strokeStyle = dropColor;
+        ctx.lineWidth = isStorm ? 1.5 : 1;
+        r.splash -= 0.15;
+      }
+
       r.y+=r.speed; r.x+=G.weather.wind;
-      if (r.y>G.cam.y+canvas.height+20) { r.y=G.cam.y-10; r.x=G.cam.x+Math.random()*canvas.width; }
+      if (r.y>G.cam.y+canvas.height+20) {
+        r.y=G.cam.y-10; r.x=G.cam.x+Math.random()*canvas.width;
+        r.splash = 1.0; // trigger splash on next cycle
+      }
     });
-    ctx.globalAlpha=1;
+    ctx.globalAlpha=1; ctx.lineCap='butt';
+
+    // Storm: dark overlay + wind streaks
+    if (isStorm) {
+      ctx.fillStyle = `rgba(0,5,20,${0.12*alpha})`; ctx.fillRect(0,0,canvas.width,canvas.height);
+      // Horizontal wind streaks
+      ctx.strokeStyle = `rgba(100,140,200,${0.08*alpha})`;
+      ctx.lineWidth = 1;
+      for (let i=0;i<6;i++) {
+        const wy = (canvas.height*0.2*i + performance.now()*0.04*G.weather.wind) % canvas.height;
+        ctx.globalAlpha = 0.15 + Math.sin(i*1.3)*0.1;
+        ctx.beginPath(); ctx.moveTo(0,wy); ctx.lineTo(canvas.width,wy+G.weather.wind*3); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
+
+    // Fog overlay
+    if (G.weather.fog > 0) {
+      const fogAlpha = G.weather.fog * 0.35 * alpha;
+      const fogGrad = ctx.createLinearGradient(0,0,0,canvas.height);
+      fogGrad.addColorStop(0, `rgba(160,180,200,${fogAlpha*0.5})`);
+      fogGrad.addColorStop(0.5, `rgba(160,180,200,${fogAlpha})`);
+      fogGrad.addColorStop(1, `rgba(160,180,200,${fogAlpha*0.7})`);
+      ctx.fillStyle = fogGrad; ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
   }
 }
 
