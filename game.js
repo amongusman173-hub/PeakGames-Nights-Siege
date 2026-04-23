@@ -1316,6 +1316,15 @@ function startDayPhase() {
   const bonus = Math.floor(200 * (G.player.waveBonusMult||1));
   G.money += bonus;
   addFloatingText(`WAVE CLEAR! +$${bonus}`, canvas.width/2, canvas.height/2-40, '#f1c40f');
+  // Show wave clear banner
+  const wcb = document.getElementById('wave-clear-banner');
+  if (wcb) {
+    wcb.classList.remove('hidden');
+    wcb.style.animation = 'none';
+    void wcb.offsetHeight; // reflow to restart animation
+    wcb.style.animation = '';
+    setTimeout(() => wcb.classList.add('hidden'), 2500);
+  }
 
   // Last stand reset
   G.player.lastStandUsed = false;
@@ -2389,6 +2398,7 @@ function damagePlayer(dmg, infected) {
   if (infGain>0) G.player.infection = Math.min(100, G.player.infection+infGain);
   spawnParticles(G.player.x, G.player.y, '#e74c3c', 4, 3);
   playSound('take_damage', 0.15);
+  G._damageFlash = performance.now(); // trigger red screen flash
   updateHUD();
   if (G.player.hp<=0) playerDowned();
 }
@@ -2628,6 +2638,7 @@ function updateTurrets(dt) {
     G.zombies.forEach(z=>{ const d=Math.hypot(z.x-t.x,z.y-t.y); if(d<nearDist){nearest=z;nearDist=d;} });
     if (nearest) {
       t.cooldown=550; t.angle=Math.atan2(nearest.y-t.y,nearest.x-t.x);
+      t._lastFired = performance.now();
       G.bullets.push({ x:t.x,y:t.y, vx:Math.cos(t.angle)*13,vy:Math.sin(t.angle)*13, damage:35,range:320,traveled:0,color:'#00ffff',size:5,owner:'turret',explosive:0 });
     }
   });
@@ -2726,6 +2737,25 @@ function drawNPCs() {
     // Shadow
     ctx.fillStyle='rgba(0,0,0,0.25)';
     ctx.beginPath(); ctx.ellipse(0,6,11,4,0,0,Math.PI*2); ctx.fill();
+
+    // Type aura
+    const now_n = performance.now();
+    if (npc.type === 'medic') {
+      ctx.globalAlpha = 0.2 + Math.sin(now_n*0.003)*0.1;
+      ctx.fillStyle = '#3498db';
+      ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (npc.type === 'heavy') {
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = '#e74c3c';
+      ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (npc.type === 'soldier') {
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = '#27ae60';
+      ctx.beginPath(); ctx.arc(0,0,14,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
 
     // Body (upright, color-coded by type)
     ctx.fillStyle=npc.color;
@@ -2914,8 +2944,11 @@ function updateDayTimer(dt) {
   if (G.dayTimer<=0) { document.getElementById('shop-overlay').classList.add('hidden'); startNightWave(); }
   document.getElementById('timer-text').textContent=Math.ceil(Math.max(0,G.dayTimer))+'s';
   if (G.shopOpen) document.getElementById('shop-timer').textContent=Math.ceil(Math.max(0,G.dayTimer));
-  // Sunset tint when 20s left — store as G._sunsetStrength for drawDayAtmosphere
+  // Sunset tint when 20s left
   G._sunsetStrength = G.dayTimer <= 20 ? (20 - G.dayTimer) / 20 : 0;
+  // Timer urgency flash when < 10s
+  const timerBadge = document.getElementById('timer-badge');
+  if (timerBadge) timerBadge.classList.toggle('urgent', G.dayTimer < 10);
 }
 
 function updateNightTimer(dt) {
@@ -3093,19 +3126,26 @@ function drawLootables() {
 
     // Loot prompt when nearby
     if (nearby) {
+      const now_l = performance.now();
+      const pulse = 0.6 + Math.sin(now_l*0.005)*0.4;
+      // Pulsing glow outline
       ctx.save();
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      ctx.beginPath(); ctx.roundRect(sx-32, sy-def.h/2-28, 64, 18, 4); ctx.fill();
-      ctx.fillStyle = '#f1c40f';
-      ctx.font = 'bold 11px Rajdhani,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('[E/F] Loot ' + def.label, sx, sy-def.h/2-14);
-      ctx.restore();
-      // Glow outline
-      ctx.save();
-      ctx.strokeStyle = 'rgba(241,196,15,0.6)'; ctx.lineWidth = 2;
       ctx.translate(sx, sy); ctx.rotate(obj.angle);
-      ctx.beginPath(); ctx.roundRect(-def.w/2-3, -def.h/2-3, def.w+6, def.h+6, 6); ctx.stroke();
+      ctx.shadowColor = '#f1c40f'; ctx.shadowBlur = 12*pulse;
+      ctx.strokeStyle = `rgba(241,196,15,${0.5*pulse})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.roundRect(-def.w/2-4, -def.h/2-4, def.w+8, def.h+8, 7); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+      // Prompt label
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.beginPath(); ctx.roundRect(sx-36, sy-def.h/2-30, 72, 18, 5); ctx.fill();
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 10px Orbitron,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#f1c40f'; ctx.shadowBlur = 6;
+      ctx.fillText('[E] ' + def.label, sx, sy-def.h/2-16);
+      ctx.shadowBlur = 0;
       ctx.restore();
     }
   });
@@ -3876,8 +3916,15 @@ function drawProjectiles() {
 }
 
 function drawMines() {
+  const now = performance.now();
   G.mines.forEach(m => {
     const sx=m.x-G.cam.x, sy=m.y-G.cam.y;
+    if (m.armed) {
+      // Pulsing danger glow
+      const pulse = 0.4 + Math.sin(now*0.008)*0.3;
+      ctx.fillStyle=`rgba(231,76,60,${pulse*0.3})`;
+      ctx.beginPath(); ctx.arc(sx,sy,18,0,Math.PI*2); ctx.fill();
+    }
     // Body
     ctx.fillStyle=m.armed?'#c0392b':'#7f8c8d';
     ctx.beginPath(); ctx.arc(sx,sy,9,0,Math.PI*2); ctx.fill();
@@ -3886,28 +3933,49 @@ function drawMines() {
     // Prongs
     ctx.strokeStyle=m.armed?'#e74c3c':'#7f8c8d'; ctx.lineWidth=2;
     for(let i=0;i<4;i++){const a=i*Math.PI/2;ctx.beginPath();ctx.moveTo(sx+Math.cos(a)*9,sy+Math.sin(a)*9);ctx.lineTo(sx+Math.cos(a)*13,sy+Math.sin(a)*13);ctx.stroke();}
-    // Blink
-    if (m.armed&&Math.floor(performance.now()/300)%2===0) {
-      ctx.fillStyle='#e74c3c'; ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill();
+    // Blink LED
+    if (m.armed) {
+      const blink = Math.floor(now/300)%2===0;
+      if (blink) {
+        ctx.shadowColor='#e74c3c'; ctx.shadowBlur=8;
+        ctx.fillStyle='#ff4444'; ctx.beginPath(); ctx.arc(sx,sy,3,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+      }
     }
   });
 }
 
 function drawTurrets() {
+  const now = performance.now();
   G.turrets.forEach(t => {
     const sx=t.x-G.cam.x, sy=t.y-G.cam.y;
+    // Outer glow ring
+    const pulse = 0.3 + Math.sin(now*0.004)*0.15;
+    ctx.fillStyle=`rgba(0,255,255,${pulse*0.2})`;
+    ctx.beginPath(); ctx.arc(sx,sy,20,0,Math.PI*2); ctx.fill();
     // Base
-    ctx.fillStyle='#2c3e50';
+    ctx.fillStyle='#1a2a3a';
     ctx.beginPath(); ctx.arc(sx,sy,14,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#00ffff'; ctx.lineWidth=2;
+    ctx.strokeStyle='rgba(0,255,255,0.7)'; ctx.lineWidth=2;
+    ctx.shadowColor='#00ffff'; ctx.shadowBlur=8;
     ctx.beginPath(); ctx.arc(sx,sy,14,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
     // Barrel
     ctx.save(); ctx.translate(sx,sy); ctx.rotate(t.angle||0);
-    ctx.fillStyle='#7f8c8d'; ctx.fillRect(4,-3,16,6);
-    ctx.fillStyle='#95a5a6'; ctx.fillRect(18,-2,4,4);
+    ctx.fillStyle='#4a6a7a'; ctx.fillRect(4,-3,18,6);
+    ctx.fillStyle='#7fb3c8'; ctx.fillRect(20,-2,4,4);
+    // Muzzle flash when recently fired
+    if (t._lastFired && now - t._lastFired < 80) {
+      ctx.shadowColor='#00ffff'; ctx.shadowBlur=12;
+      ctx.fillStyle='rgba(0,255,255,0.9)';
+      ctx.beginPath(); ctx.arc(24,0,4,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+    }
     ctx.restore();
-    // Center
-    ctx.fillStyle='#00ffff'; ctx.beginPath(); ctx.arc(sx,sy,5,0,Math.PI*2); ctx.fill();
+    // Center dot
+    ctx.shadowColor='#00ffff'; ctx.shadowBlur=6;
+    ctx.fillStyle='#00ffff'; ctx.beginPath(); ctx.arc(sx,sy,4,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
   });
 }
 
@@ -4337,6 +4405,21 @@ function drawZombieCount() {
   if (!el) return;
   el.style.display='block';
   el.textContent=`🧟 ${G.zombies.length} remaining`;
+}
+
+function drawDamageFlash() {
+  if (!G._damageFlash) return;
+  const age = performance.now() - G._damageFlash;
+  const dur = 220;
+  if (age > dur) { G._damageFlash = null; return; }
+  const t = age / dur;
+  // Red vignette that fades out
+  const alpha = (1 - t) * 0.45;
+  const grad = ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.2, canvas.width/2,canvas.height/2,canvas.width*0.8);
+  grad.addColorStop(0, `rgba(180,0,0,0)`);
+  grad.addColorStop(1, `rgba(220,0,0,${alpha})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 }
 
 function drawDownedOverlay() {
@@ -5095,6 +5178,7 @@ function gameLoop(ts) {
   drawFloatingTexts();
   drawZombieCount();
   drawDownedOverlay();
+  drawDamageFlash();
   drawCampfireCompass();
   drawInfectionWarning();
   drawQuickUseHUD();

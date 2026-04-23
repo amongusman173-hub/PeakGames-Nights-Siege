@@ -48,7 +48,13 @@ body { background:#000; overflow:hidden; font-family:'Rajdhani',sans-serif; curs
 #phase-badge.day   { background:rgba(241,196,15,0.12); color:#f1c40f; border:1px solid rgba(241,196,15,0.35); text-shadow:0 0 8px rgba(241,196,15,0.4); }
 #phase-badge.night { background:rgba(52,152,219,0.12); color:#74b9ff; border:1px solid rgba(52,152,219,0.35); text-shadow:0 0 8px rgba(116,185,255,0.4); }
 #timer-badge { font-family:'Orbitron',sans-serif; font-size:20px; color:#e74c3c; font-weight:700; text-shadow:0 0 10px rgba(231,76,60,0.5); }
-#weather-badge { font-size:11px; color:#aad4f5; letter-spacing:1px; opacity:0.8; }
+#timer-badge.urgent { animation:timerUrgent 0.5s infinite alternate; }
+@keyframes timerUrgent { from{color:#e74c3c;text-shadow:0 0 10px rgba(231,76,60,0.5)} to{color:#ff6b6b;text-shadow:0 0 24px rgba(231,76,60,1.0)} }
+#weather-badge {
+  font-size:11px; color:#aad4f5; letter-spacing:1px; opacity:0.85;
+  background:rgba(0,0,0,0.3); padding:3px 8px; border-radius:12px;
+  border:1px solid rgba(170,212,245,0.15);
+}
 #money-hud { font-family:'Orbitron',sans-serif; font-size:20px; color:#f1c40f; text-align:right; text-shadow:0 0 10px rgba(241,196,15,0.5); }
 #kills-hud { font-size:13px; color:#e74c3c; text-align:right; font-family:'Orbitron',sans-serif; text-shadow:0 0 6px rgba(231,76,60,0.4); }
 
@@ -103,13 +109,26 @@ body { background:#000; overflow:hidden; font-family:'Rajdhani',sans-serif; curs
 /* ── Side Buttons ── */
 #side-btns { position:absolute; top:110px; right:14px; display:flex; flex-direction:column; gap:6px; z-index:10; }
 #side-btns button {
-  background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.15);
-  color:#ccc; padding:7px 12px; border-radius:6px; cursor:pointer;
+  background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.12);
+  color:#bbb; padding:8px 14px; border-radius:8px; cursor:pointer;
   font-size:12px; font-family:'Rajdhani',sans-serif; letter-spacing:1px;
-  transition:all 0.15s; backdrop-filter:blur(4px);
+  transition:all 0.18s; backdrop-filter:blur(6px);
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);
 }
-#side-btns button:hover { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.3); color:#fff; }
-#nv-btn.active { background:rgba(0,180,0,0.25); border-color:#0f0; color:#0f0; box-shadow:0 0 8px rgba(0,255,0,0.3); }
+#side-btns button:hover {
+  background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.3);
+  color:#fff; transform:translateX(-2px);
+  box-shadow:0 4px 16px rgba(0,0,0,0.5);
+}
+#nv-btn.active {
+  background:rgba(0,180,0,0.2); border-color:rgba(0,255,100,0.6);
+  color:#00ff88; box-shadow:0 0 12px rgba(0,255,100,0.25);
+  text-shadow:0 0 8px rgba(0,255,100,0.6);
+}
+#skip-btn { border-color:rgba(116,185,255,0.2); }
+#skip-btn:hover { border-color:rgba(116,185,255,0.5); color:#74b9ff; }
+#shop-btn { border-color:rgba(241,196,15,0.2); }
+#shop-btn:hover { border-color:rgba(241,196,15,0.5); color:#f1c40f; }
 
 /* ── Shop ── */
 #shop-overlay {
@@ -174,10 +193,58 @@ body { background:#000; overflow:hidden; font-family:'Rajdhani',sans-serif; curs
 #shop-close:hover { box-shadow:0 6px 24px rgba(231,76,60,0.5); transform:translateY(-1px); }
 
 /* ── Boss Warning ── */
-#boss-warning { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Orbitron',sans-serif; font-size:32px; color:#e74c3c; text-shadow:0 0 30px #e74c3c; font-weight:900; letter-spacing:4px; z-index:20; animation:bossFlash 0.4s infinite alternate; pointer-events:none; }
-@keyframes bossFlash { from{opacity:1;transform:translate(-50%,-50%) scale(1)} to{opacity:0.1;transform:translate(-50%,-50%) scale(1.05)} }
+#boss-warning {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-family:'Orbitron',sans-serif; font-size:36px; color:#e74c3c;
+  text-shadow:0 0 40px #e74c3c, 0 0 80px rgba(231,76,60,0.5);
+  font-weight:900; letter-spacing:5px; z-index:20;
+  animation:bossFlash 0.35s infinite alternate;
+  pointer-events:none;
+  background:rgba(0,0,0,0.5); padding:12px 32px; border-radius:8px;
+  border:1px solid rgba(231,76,60,0.4);
+  box-shadow:0 0 40px rgba(231,76,60,0.3), inset 0 0 20px rgba(231,76,60,0.1);
+}
+@keyframes bossFlash {
+  from { opacity:1; transform:translate(-50%,-50%) scale(1); text-shadow:0 0 40px #e74c3c; }
+  to   { opacity:0.15; transform:translate(-50%,-50%) scale(1.04); text-shadow:0 0 80px #e74c3c, 0 0 120px rgba(231,76,60,0.8); }
+}
 
-/* ── Game Over ── */
+/* ── Wave Clear Banner ── */
+#wave-clear-banner {
+  position:absolute; top:38%; left:50%; transform:translate(-50%,-50%);
+  font-family:'Orbitron',sans-serif; font-size:42px; font-weight:900;
+  color:#2ecc71; letter-spacing:6px; z-index:20; pointer-events:none;
+  text-shadow:0 0 40px rgba(46,204,113,0.9), 0 0 80px rgba(46,204,113,0.4);
+  animation:waveClearAnim 2.5s ease-out forwards;
+}
+@keyframes waveClearAnim {
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(0.7); }
+  15%  { opacity:1; transform:translate(-50%,-50%) scale(1.08); }
+  30%  { transform:translate(-50%,-50%) scale(1.0); }
+  70%  { opacity:1; }
+  100% { opacity:0; transform:translate(-50%,-60%) scale(1.0); }
+}
+
+/* ── Zombie type announcement ── */
+#zombie-type-announce {
+  position:absolute; top:28%; left:50%; transform:translateX(-50%);
+  font-family:'Orbitron',sans-serif; font-size:16px; color:#e74c3c;
+  letter-spacing:3px; z-index:20; pointer-events:none;
+  text-shadow:0 0 16px rgba(231,76,60,0.8);
+  background:rgba(0,0,0,0.6); padding:8px 20px; border-radius:6px;
+  border:1px solid rgba(231,76,60,0.3);
+}
+
+/* ── Zombie count badge ── */
+#zombie-count-badge {
+  position:absolute; top:80px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.7); border:1px solid rgba(231,76,60,0.4);
+  border-radius:20px; padding:5px 18px;
+  font-family:'Orbitron',sans-serif; font-size:13px; color:#e74c3c;
+  pointer-events:none; z-index:10; display:none;
+  text-shadow:0 0 8px rgba(231,76,60,0.5);
+  box-shadow:0 0 12px rgba(231,76,60,0.15);
+}
 /* ── Main Menu ── */
 #main-menu { position:absolute; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 #mm-bg-canvas { position:absolute; inset:0; width:100%; height:100%; background:#020408; }
@@ -334,13 +401,28 @@ body { background:#000; overflow:hidden; font-family:'Rajdhani',sans-serif; curs
 .pc-row span:last-child  { font-size:11px; color:#777; text-align:left; padding:2px 0; }
 
 /* ── Crosshair ── */
-#crosshair { position:absolute; width:22px; height:22px; pointer-events:none; z-index:30; transform:translate(-50%,-50%); }
-#crosshair::before, #crosshair::after { content:''; position:absolute; background:rgba(255,255,255,0.85); }
+#crosshair {
+  position:absolute; width:24px; height:24px; pointer-events:none; z-index:30;
+  transform:translate(-50%,-50%);
+}
+#crosshair::before, #crosshair::after {
+  content:''; position:absolute;
+  background:rgba(255,255,255,0.9);
+  box-shadow:0 0 4px rgba(255,255,255,0.6);
+}
 #crosshair::before { width:2px; height:100%; left:50%; transform:translateX(-50%); }
 #crosshair::after  { height:2px; width:100%; top:50%; transform:translateY(-50%); }
 
 /* ── Zombie count badge ── */
-#zombie-count-badge { position:absolute; top:80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.6); border:1px solid rgba(231,76,60,0.3); border-radius:20px; padding:4px 16px; font-family:'Orbitron',sans-serif; font-size:12px; color:#e74c3c; pointer-events:none; z-index:10; display:none; }
+#zombie-count-badge {
+  position:absolute; top:80px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.7); border:1px solid rgba(231,76,60,0.4);
+  border-radius:20px; padding:5px 18px;
+  font-family:'Orbitron',sans-serif; font-size:13px; color:#e74c3c;
+  pointer-events:none; z-index:10; display:none;
+  text-shadow:0 0 8px rgba(231,76,60,0.5);
+  box-shadow:0 0 12px rgba(231,76,60,0.15);
+}
 
 /* ── Flashlight battery ── */
 #battery-display {
