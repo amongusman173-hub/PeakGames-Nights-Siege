@@ -1747,7 +1747,7 @@ document.getElementById('go-restart-btn').addEventListener('click', ()=>{ docume
 
 function startGame() {
   try {
-  stopLoop('mm_music', 800);
+  stopLoop('mm_music', 0);
   document.getElementById('main-menu').classList.add('hidden');
   // Show gameplay UI
   document.getElementById('hud').classList.remove('hidden');
@@ -1767,7 +1767,7 @@ function startGame() {
 
 function continueGame() {
   try {
-  stopLoop('mm_music', 800);
+  stopLoop('mm_music', 0);
   const state = loadGameState();
   if (!state) { startGame(); return; }
   document.getElementById('main-menu').classList.add('hidden');
@@ -5221,7 +5221,12 @@ initGame();
   }
 
   requestAnimationFrame(mmLoop);
-  // Start main menu music once audio is unlocked
-  document.addEventListener('click', ()=>{ startLoop('mm_music', 0.35); }, { once:true });
-  document.addEventListener('keydown', ()=>{ startLoop('mm_music', 0.35); }, { once:true });
+  // Start main menu music only while main menu is visible
+  function tryStartMMMusic() {
+    if (!document.getElementById('main-menu').classList.contains('hidden')) {
+      startLoop('mm_music', 0.35);
+    }
+  }
+  document.addEventListener('click', tryStartMMMusic, { once:true });
+  document.addEventListener('keydown', tryStartMMMusic, { once:true });
 })();
