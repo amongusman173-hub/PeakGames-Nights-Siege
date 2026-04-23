@@ -43,7 +43,7 @@ const WEAPONS = {
   shotgun:      { name:'Shotgun',       damage:20,  fireRate:900,  range:400,  spread:0.25, ammo:6,   maxAmmo:6,   reloadTime:700,  bulletSize:7,  speed:9,  auto:false, pellets:6, price:300,  color:'#e67e22', reserveAmmo:24,  maxReserve:48,  draw(c,w,h){drawShotgun(c,w,h);} },
   smg:          { name:'SMG',           damage:15,  fireRate:110,  range:550,  spread:0.12, ammo:30,  maxAmmo:30,  reloadTime:2000, bulletSize:4,  speed:12, auto:true,  price:500,  color:'#3498db', reserveAmmo:90,  maxReserve:180, draw(c,w,h){drawSMG(c,w,h);} },
   rifle:        { name:'Rifle',         damage:60,  fireRate:600,  range:800,  spread:0.02, ammo:20,  maxAmmo:20,  reloadTime:2200, bulletSize:6,  speed:16, auto:false, price:800,  color:'#2ecc71', reserveAmmo:60,  maxReserve:120, draw(c,w,h){drawRifle(c,w,h);} },
-  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:1200, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:3500, bulletSize:8,  speed:22, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  draw(c,w,h){drawSniper(c,w,h);} },
+  sniper:       { name:'Sniper',        damage:150, fireRate:1500, range:1200, spread:0.005,ammo:5,   maxAmmo:5,   reloadTime:3500, bulletSize:8,  speed:22, auto:false, price:1200, color:'#9b59b6', reserveAmmo:15,  maxReserve:30,  pierce:2, draw(c,w,h){drawSniper(c,w,h);} },
   minigun:      { name:'Minigun',       damage:12,  fireRate:75,   range:600,  spread:0.18, ammo:200, maxAmmo:200, reloadTime:4000, bulletSize:4,  speed:13, auto:true,  price:2500, color:'#e74c3c', reserveAmmo:600, maxReserve:1200, draw(c,w,h){drawMinigun(c,w,h);} },
   flamethrower: { name:'Flamethrower',  damage:8,   fireRate:55,   range:280,  spread:0.4,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:10, speed:7,  auto:true,  price:1800, color:'#ff6b35', reserveAmmo:300, maxReserve:600,  flame:true, draw(c,w,h){drawFlamethrower(c,w,h);} },
   // ── New weapons ──
@@ -55,7 +55,7 @@ const WEAPONS = {
   crossbow:     { name:'Crossbow',      damage:120, fireRate:1200, range:900,  spread:0.01, ammo:6,   maxAmmo:6,   reloadTime:3500, bulletSize:6,  speed:20, auto:false, price:1000, color:'#8e44ad', reserveAmmo:18,  maxReserve:36,  draw(c,w,h){drawCrossbow(c,w,h);} },
   uzi:          { name:'Uzi',           damage:12,  fireRate:80,   range:450,  spread:0.15, ammo:32,  maxAmmo:32,  reloadTime:1800, bulletSize:4,  speed:13, auto:true,  price:650,  color:'#16a085', reserveAmmo:96,  maxReserve:192, draw(c,w,h){drawUzi(c,w,h);} },
   lmg:          { name:'LMG',           damage:22,  fireRate:95,   range:700,  spread:0.1,  ammo:100, maxAmmo:100, reloadTime:2200, bulletSize:5,  speed:14, auto:true,  price:1600, color:'#d35400', reserveAmmo:200, maxReserve:400, draw(c,w,h){drawLMG(c,w,h);} },
-  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:1400, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:3500, bulletSize:10, speed:32, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  draw(c,w,h){drawRailgun(c,w,h);} },
+  railgun:      { name:'Railgun',       damage:300, fireRate:2500, range:1400, spread:0.0,  ammo:3,   maxAmmo:3,   reloadTime:3500, bulletSize:10, speed:32, auto:false, price:3500, color:'#00d2ff', reserveAmmo:6,   maxReserve:12,  pierce:999, draw(c,w,h){drawRailgun(c,w,h);} },
 };
 
 // ── Gun Clipart Drawing Functions ──────────────────────────────
@@ -382,6 +382,11 @@ _loadSound('crossbow_shot',  'sounds/crossbowshoot.ogg',                  false,
 _loadSound('crossbow_reload','sounds/crossbow-reload-part1.ogg',          false, 0.6);
 _loadSound('rpg_shot',       'sounds/rpg-shoot.ogg',                      false, 0.65);
 _loadSound('rpg_reload',     'sounds/rpg-reload.ogg',                     false, 0.6);
+_loadSound('sniper_shot',    'sounds/sniper-shoot.wav',                    false, 0.6);
+_loadSound('railgun_shot',   'sounds/railgun-shoot.ogg',                   false, 0.65);
+_loadSound('railgun_charge', 'sounds/railgun-charge.wav',                  false, 0.5);
+_loadSound('railgun_reload', 'sounds/rail-gun-reload.wav',                 false, 0.6);
+_loadSound('skill_levelup',  'sounds/skill-tree-level-up.mp3',             false, 0.6);
 _loadSound('revolver_reload','sounds/revolver-reload.ogg',                false, 0.6);
 _loadSound('ak47_reload',    'sounds/ak47reload.wav',                     false, 0.6);
 _loadSound('m4_reload',      'sounds/m4a1 reload.mp3',                    false, 0.75);
@@ -426,7 +431,7 @@ const WEAPON_SHOT_SFX = {
   shotgun:'shotgun_shot',
   rifle:'rifle_shot',
   lmg:'burst_shot',
-  sniper:'laser_shot', railgun:'laser_shot',
+  sniper:'sniper_shot', railgun:'railgun_shot',
   crossbow:'crossbow_shot',
   rpg:'rpg_shot',
   minigun:'uzi_shot',
@@ -444,7 +449,7 @@ const WEAPON_RELOAD_SFX = {
   rifle:'rifle_reload',
   crossbow:'crossbow_reload',
   rpg:'rpg_reload',
-  sniper:'ak47_reload', railgun:'ak47_reload',
+  sniper:'ak47_reload', railgun:'railgun_reload',
   minigun:'m4_reload', flamethrower:'pistol_reload',
 };
 
@@ -646,6 +651,7 @@ function initGame() {
     particles: [],
     mines: [],
     turrets: [],
+    sentries: [],
     barricades: [],
     lootables: [],
     npcs: [],
@@ -1695,6 +1701,7 @@ document.addEventListener('keydown', e => {
   if (e.code==='KeyZ') useStim();                       // Z = Stim
   if (e.code==='KeyB') placeBarricade();                // B = Barricade
   if (e.code==='KeyU') placeTurret();                   // U = Turret
+  if (e.code==='KeyI') placeSentry();                   // I = Sentry
   if (e.code==='KeyL') tryLoot();                       // L = Loot (explicit)
   if (e.code==='Tab')  { e.preventDefault(); if(G.phase==='day') G.shopOpen ? closeShopOnly() : openShop(); }
   if (e.code==='Digit1') selectSlot(0);
@@ -1954,6 +1961,15 @@ function placeTurret() {
   G.player.inventory.turret--;
   G.turrets.push({ x:G.player.x, y:G.player.y, cooldown:0, angle:0 });
   addFloatingText('Turret placed!', G.player.x-G.cam.x, G.player.y-G.cam.y-30, '#00ffff');
+  updateHUD();
+}
+
+function placeSentry() {
+  if ((G.player.inventory.sentry||0)<=0) return;
+  G.player.inventory.sentry--;
+  G.sentries.push({ x:G.player.x, y:G.player.y, cooldown:0, angle:0, hp:150, maxHp:150 });
+  addFloatingText('Sentry placed!', G.player.x-G.cam.x, G.player.y-G.cam.y-30, '#e74c3c');
+  updateHUD();
 }
 
 function placeBarricade() {
@@ -2063,15 +2079,28 @@ function shoot() {
   for (let p=0;p<pellets;p++) {
     const spread = (Math.random()-0.5)*wDef.spread*2*spreadMult;
     const a = angle+spread;
-    G.bullets.push({
-      x:G.player.x, y:G.player.y,
-      vx:Math.cos(a)*wDef.speed, vy:Math.sin(a)*wDef.speed,
-      damage: wDef.damage * dmgMult * berserkerBonus,
-      range: wDef.range * rangeMult,
-      traveled:0, color:wDef.color, size:wDef.bulletSize,
-      flame:wDef.flame||false, owner:'player',
-      explosive: G.player.explosiveRounds||0,
-    });
+    // RPG fires as a slow projectile that explodes on impact
+    if (slot.weapon === 'rpg') {
+      G.projectiles.push({
+        x:G.player.x, y:G.player.y,
+        vx:Math.cos(a)*wDef.speed, vy:Math.sin(a)*wDef.speed,
+        type:'rpg_rocket', born:performance.now(), owner:'player',
+        damage: wDef.damage * dmgMult * berserkerBonus,
+        explosive: wDef.explosive||5,
+      });
+    } else {
+      G.bullets.push({
+        x:G.player.x, y:G.player.y,
+        vx:Math.cos(a)*wDef.speed, vy:Math.sin(a)*wDef.speed,
+        damage: wDef.damage * dmgMult * berserkerBonus,
+        range: wDef.range * rangeMult,
+        traveled:0, color:wDef.color, size:wDef.bulletSize,
+        flame:wDef.flame||false, owner:'player',
+        explosive: G.player.explosiveRounds||0,
+        pierce: wDef.pierce||0,
+        pierceCount: 0,
+      });
+    }
   }
 
   // Double tap perk
@@ -2461,15 +2490,22 @@ function updateBullets() {
     for (let j=G.zombies.length-1;j>=0;j--) {
       const z=G.zombies[j];
       if (Math.hypot(b.x-z.x,b.y-z.y)<z.size) {
-        z.hp-=b.damage; z.stagger=80;
+        // Damage with falloff for piercing sniper (not railgun which has pierce:999)
+        const falloff = (b.pierce && b.pierce < 999 && b.pierceCount > 0) ? Math.pow(0.6, b.pierceCount) : 1;
+        z.hp -= b.damage * falloff;
+        z.stagger=80;
         spawnParticles(b.x,b.y,'#cc2200',4,2);
         if (b.explosive>0) explode(b.x,b.y,40+b.explosive*15,b.damage*0.5,'player');
-        if (!b.flame && !bulletRemoved) { G.bullets.splice(i,1); bulletRemoved=true; }
-        if (z.hp<=0) {
-          // Mark for removal instead of splicing mid-loop
-          z._dead = true;
+        if (z.hp<=0) z._dead = true;
+        // Pierce logic
+        if (b.pierce && b.pierceCount < b.pierce) {
+          b.pierceCount++;
+          // Railgun: leave a trail spark
+          if (b.pierce >= 999) spawnParticles(b.x,b.y,'#00d2ff',3,2,'spark');
+        } else {
+          if (!b.flame && !bulletRemoved) { G.bullets.splice(i,1); bulletRemoved=true; }
+          break;
         }
-        break;
       }
     }
   }
@@ -2622,6 +2658,18 @@ function updateProjectiles() {
           if (G.zombies[j]._dead) killZombie(j, G.zombies[j]);
         }
       }
+    } else if (p.type==='rpg_rocket') {
+      let hitZombie = false;
+      for (const z of G.zombies) {
+        if (Math.hypot(z.x-p.x, z.y-p.y) < z.size+10) { hitZombie=true; break; }
+      }
+      if (isSolidWorld(p.x,p.y) || hitZombie || now-p.born>3000) {
+        explode(p.x,p.y, 80+(p.explosive||5)*20, p.damage, 'player');
+        spawnParticles(p.x,p.y,'#ff6b35',25,8);
+        spawnParticles(p.x,p.y,'#f1c40f',15,5);
+        spawnParticles(p.x,p.y,'#fff',8,4,'spark');
+        G.projectiles.splice(i,1);
+      }
     } else if (p.type==='spit') {
       if (now-p.born>3000||isSolidWorld(p.x,p.y)) { G.projectiles.splice(i,1); continue; }
       if (Math.hypot(p.x-G.player.x,p.y-G.player.y)<14) { damagePlayer(p.damage,true); G.projectiles.splice(i,1); }
@@ -2658,6 +2706,31 @@ function updateTurrets(dt) {
       G.bullets.push({ x:t.x,y:t.y, vx:Math.cos(t.angle)*13,vy:Math.sin(t.angle)*13, damage:35,range:320,traveled:0,color:'#00ffff',size:5,owner:'turret',explosive:0 });
     }
   });
+}
+
+function updateSentries(dt) {
+  if (!G.sentries) return;
+  for (let i=G.sentries.length-1;i>=0;i--) {
+    const s=G.sentries[i];
+    // Sentries take damage from zombies
+    G.zombies.forEach(z=>{
+      if (Math.hypot(z.x-s.x,z.y-s.y)<z.size+14 && performance.now()-(s._lastHit||0)>600) {
+        s._lastHit=performance.now(); s.hp-=z.damage*0.7;
+        spawnParticles(s.x,s.y,'#e74c3c',3,2);
+      }
+    });
+    if (s.hp<=0) { G.sentries.splice(i,1); continue; }
+    s.cooldown=(s.cooldown||0)-dt;
+    if (s.cooldown>0) continue;
+    let nearest=null, nearDist=480*(G.player.sentryMult||1);
+    G.zombies.forEach(z=>{ const d=Math.hypot(z.x-s.x,z.y-s.y); if(d<nearDist){nearest=z;nearDist=d;} });
+    if (nearest) {
+      s.cooldown=300/(G.player.sentryMult||1);
+      s.angle=Math.atan2(nearest.y-s.y,nearest.x-s.x);
+      s._lastFired=performance.now();
+      G.bullets.push({ x:s.x,y:s.y, vx:Math.cos(s.angle)*16,vy:Math.sin(s.angle)*16, damage:55*(G.player.sentryMult||1),range:480,traveled:0,color:'#e74c3c',size:5,owner:'sentry',explosive:0 });
+    }
+  }
 }
 
 function updateNPCs(dt) {
@@ -2958,6 +3031,8 @@ function updateReload() {
       slot.reloading=false;
       // Shotgun pump sound at end of reload
       if (slot.weapon === 'shotgun') playSound('shotgun_pump', 0.05);
+      // Railgun charge-up sound when ready to fire
+      if (slot.weapon === 'railgun') playSound('railgun_charge', 0.1);
       updateHUD();
     }
   });
@@ -3936,6 +4011,16 @@ function drawProjectiles() {
       sg.addColorStop(0,'#d35400'); sg.addColorStop(1,'rgba(142,68,173,0)');
       ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sx,sy,6,0,Math.PI*2); ctx.fill();
       ctx.globalAlpha=1;
+    } else if (p.type==='rpg_rocket') {
+      const rAngle = Math.atan2(p.vy, p.vx);
+      ctx.save(); ctx.translate(sx,sy); ctx.rotate(rAngle);
+      ctx.fillStyle='#c0392b'; ctx.fillRect(-10,-3,20,6);
+      ctx.fillStyle='#f39c12'; ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill();
+      ctx.shadowColor='#ff6b35'; ctx.shadowBlur=12;
+      ctx.fillStyle='rgba(255,120,30,0.9)'; ctx.beginPath(); ctx.arc(-10,0,5,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.restore();
+      if (Math.random()<0.5) spawnParticles(p.x-Math.cos(rAngle)*10, p.y-Math.sin(rAngle)*10, '#888', 1, 0.8);
     }
   });
 }
@@ -4001,6 +4086,46 @@ function drawTurrets() {
     ctx.shadowColor='#00ffff'; ctx.shadowBlur=6;
     ctx.fillStyle='#00ffff'; ctx.beginPath(); ctx.arc(sx,sy,4,0,Math.PI*2); ctx.fill();
     ctx.shadowBlur=0;
+  });
+}
+
+function drawSentries() {
+  if (!G.sentries) return;
+  const now = performance.now();
+  G.sentries.forEach(s => {
+    const sx=s.x-G.cam.x, sy=s.y-G.cam.y;
+    // Outer glow
+    const pulse = 0.3+Math.sin(now*0.005)*0.15;
+    ctx.fillStyle=`rgba(231,76,60,${pulse*0.25})`;
+    ctx.beginPath(); ctx.arc(sx,sy,22,0,Math.PI*2); ctx.fill();
+    // Base
+    ctx.fillStyle='#2a1010';
+    ctx.beginPath(); ctx.arc(sx,sy,14,0,Math.PI*2); ctx.fill();
+    ctx.shadowColor='#e74c3c'; ctx.shadowBlur=8;
+    ctx.strokeStyle='rgba(231,76,60,0.8)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(sx,sy,14,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
+    // Barrel (dual)
+    ctx.save(); ctx.translate(sx,sy); ctx.rotate(s.angle||0);
+    ctx.fillStyle='#7a3a3a'; ctx.fillRect(4,-5,18,4); ctx.fillRect(4,1,18,4);
+    ctx.fillStyle='#c0392b'; ctx.fillRect(20,-4,4,3); ctx.fillRect(20,2,4,3);
+    if (s._lastFired && now-s._lastFired<80) {
+      ctx.shadowColor='#e74c3c'; ctx.shadowBlur=14;
+      ctx.fillStyle='rgba(231,76,60,0.9)';
+      ctx.beginPath(); ctx.arc(24,-2,4,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(24,3,4,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+    }
+    ctx.restore();
+    // Center
+    ctx.shadowColor='#e74c3c'; ctx.shadowBlur=6;
+    ctx.fillStyle='#e74c3c'; ctx.beginPath(); ctx.arc(sx,sy,4,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    // HP bar
+    const hpPct=s.hp/s.maxHp;
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(sx-14,sy-22,28,4);
+    ctx.fillStyle=hpPct>0.5?'#e74c3c':hpPct>0.25?'#f39c12':'#888';
+    ctx.fillRect(sx-14,sy-22,28*hpPct,4);
   });
 }
 
@@ -5067,6 +5192,7 @@ function showPerks() {
           SAVE.perkCoins-=cost;
           SAVE.perks[node.id]=(SAVE.perks[node.id]||0)+1;
           writeSave(SAVE);
+          playSound('skill_levelup', 0.1);
           document.getElementById('perks-coins').textContent=SAVE.perkCoins;
           document.getElementById('mm-coins').textContent=SAVE.perkCoins;
           _stBaseDirty = true; // node state changed — force full redraw
@@ -5158,6 +5284,7 @@ function gameLoop(ts) {
       moveZombies(dt);
       updateMines(dt);
       updateTurrets(dt);
+      updateSentries(dt);
       updateNPCs(dt);
     }
     updateBullets();
@@ -5177,6 +5304,7 @@ function gameLoop(ts) {
     moveZombies(dt);
     updateMines(dt);
     updateTurrets(dt);
+    updateSentries(dt);
     updateNPCs(dt);
     updateInfection(dt);
   } else {
@@ -5216,6 +5344,15 @@ function gameLoop(ts) {
     _sf.style.background = G.player.sprinting ? 'linear-gradient(90deg,#e74c3c,#f39c12)' : (G.player.sprintExhausted ? '#e74c3c' : 'linear-gradient(90deg,#e67e22,#f39c12)');
     if (_st) _st.textContent = G.player.sprinting ? 'SPRINT' : (G.player.sprintExhausted ? 'TIRED' : Math.floor(_s) + '%');
   }
+  // ── Inventory bar live update (every frame alongside stamina) ──
+  const _invKeys = ['grenade','mine','barricade','sentry','turret','medkit','molotov','c4'];
+  _invKeys.forEach(key => {
+    const cnt = G.player.inventory[key]||0;
+    const countEl = document.getElementById('inv-count-'+key);
+    const slotEl  = document.getElementById('inv-'+key);
+    if (countEl) { countEl.textContent=cnt; countEl.className='inv-count'+(cnt===0?' zero':''); }
+    if (slotEl)  { slotEl.classList.toggle('has-items', cnt>0); }
+  });
   const _bf = document.getElementById('battery-bar-fill');
   if (_bf) {
     const _b = G.flashlightBattery || 0;
@@ -5269,6 +5406,7 @@ function gameLoop(ts) {
   drawBarricades();
   drawMines();
   drawTurrets();
+  drawSentries();
   drawNPCs();
   drawZombies();
   drawBullets();
