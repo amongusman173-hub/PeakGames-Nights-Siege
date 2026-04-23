@@ -420,6 +420,7 @@ _loadSound('flame_loop',    'sounds/flamethrower.mp3',          true,  0.0);
 _loadSound('zombie_loop',   'sounds/zombiesounds.mp3',          true,  0.0);
 _loadSound('river_loop',    'sounds/river_ambience.mp3',        true,  0.0);
 _loadSound('mm_music',      'sounds/main-menu-soundtrack.ogg',  true,  0.35);
+_loadSound('blizzard_loop', 'sounds/blizzard-ambience.mp3',     true,  0.0);
 
 // Weapon → shot sound mapping
 const WEAPON_SHOT_SFX = {
@@ -523,11 +524,18 @@ function updateAmbience() {
     setLoopVolume('campfire', Math.max(0, 0.2 - d2/1500));
     startLoop('campfire');
   }
-  // Rain
+  // Rain / Blizzard
   if (G.weather && G.weather.rain) {
-    startLoop('rain_loop', 0.3);
+    if (G.weather.name === 'Blizzard') {
+      startLoop('blizzard_loop', 0.35 * (G.weatherAlpha||1));
+      stopLoop('rain_loop', 1000);
+    } else {
+      startLoop('rain_loop', 0.3 * (G.weatherAlpha||1));
+      stopLoop('blizzard_loop', 1000);
+    }
   } else {
     stopLoop('rain_loop', 1000);
+    stopLoop('blizzard_loop', 1000);
   }
   // River — volume based on proximity to nearest water tile
   if (G.player && mapTiles.length) {
@@ -1434,7 +1442,7 @@ function renderShopTab(tab) {
     let isOwned = false;
     if (item.category==='weapon') {
       const has = G.player.slots.some(s=>s&&s.weapon===item.key);
-      if (has) { ownedStr = '<div class="si-owned">✓ Equipped</div>'; isOwned = true; }
+      if (has) { ownedStr = '<div class="si-owned">✓ Equipped — click to unequip (50% refund)</div>'; isOwned = false; }
     } else if (item.category==='item') {
       const cnt = G.player.inventory[item.key]||0;
       if (cnt>0) ownedStr = `<div class="si-owned">x${cnt} owned</div>`;
@@ -1484,20 +1492,34 @@ function renderShopTab(tab) {
     div.addEventListener('click', ()=>buyItem(item));
     container.appendChild(div);
 
-    // Draw gun on canvas
+    // Draw gun on canvas — use cached offscreen canvas
     if (item.draw) {
       const gc = div.querySelector('.si-gun-canvas');
-      if (gc) { const gctx = gc.getContext('2d'); item.draw(gctx, 64, 36); }
+      if (gc) {
+        if (!item._cachedCanvas) {
+          item._cachedCanvas = document.createElement('canvas');
+          item._cachedCanvas.width = 64; item._cachedCanvas.height = 36;
+          item.draw(item._cachedCanvas.getContext('2d'), 64, 36);
+        }
+        gc.getContext('2d').drawImage(item._cachedCanvas, 0, 0);
+      }
     }
   });
 }
 
 function buyItem(item) {
-  // Owned weapon — clicking does nothing, just show a message
+  // Owned weapon — allow unequip with 50% refund
   if (item.category==='weapon') {
     const ownedIdx = G.player.slots.findIndex((s,i)=>i>0&&s&&s.weapon===item.key);
     if (ownedIdx !== -1) {
-      addFloatingText('Already equipped!', canvas.width/2, canvas.height/2-40, '#888');
+      G.player.slots[ownedIdx] = null;
+      const refund = Math.floor(item.price * 0.5);
+      G.money += refund;
+      addFloatingText(`Unequipped +${refund}💰`, canvas.width/2, canvas.height/2-40, '#e67e22');
+      if (G.player.selectedSlot === ownedIdx) G.player.selectedSlot = 0;
+      updateToolbar(); updateHUD();
+      document.getElementById('shop-money-val').textContent = G.money;
+      renderShopTab(G.shopTab);
       return;
     }
   }
@@ -2096,9 +2118,10 @@ function shoot() {
         range: wDef.range * rangeMult,
         traveled:0, color:wDef.color, size:wDef.bulletSize,
         flame:wDef.flame||false, owner:'player',
-        explosive: G.player.explosiveRounds||0,
+        explosive: (G.player.explosiveRounds||0) && wDef.price > 0 ? G.player.explosiveRounds : 0,
         pierce: wDef.pierce||0,
         pierceCount: 0,
+        hitZombies: null, // set lazily for piercing bullets
       });
     }
   }
@@ -2117,7 +2140,7 @@ function shoot() {
   spawnParticles(G.player.x, G.player.y, wDef.color, 3, 2);
   // Play shot sound
   if (wDef.flame) {
-    startLoop('flame_loop', 0.45);
+    startLoop('flame_loop', 0.65);
   } else {
     const sfxKey = WEAPON_SHOT_SFX[slot.weapon] || 'pistol_shot';
     playSound(sfxKey, 0.08);
@@ -2378,8 +2401,7 @@ function moveZombies(dt) {
           addFloatingText('WITCH ENRAGED!',z.x-G.cam.x,z.y-G.cam.y-30,'#cc88aa');
           spawnParticles(z.x,z.y,'#cc88aa',20,6);
         }
-        // Don't move until enraged
-        continue;
+        // Don't move until enraged — but still take damage (no continue)
       }
     }
 
@@ -2488,18 +2510,22 @@ function updateBullets() {
     for (let j=G.zombies.length-1;j>=0;j--) {
       const z=G.zombies[j];
       if (Math.hypot(b.x-z.x,b.y-z.y)<z.size) {
-        // Damage with falloff for piercing sniper (not railgun which has pierce:999)
+        // For piercing bullets, skip zombies already hit this pass
+        if (b.pierce > 0) {
+          if (!b.hitZombies) b.hitZombies = new Set();
+          if (b.hitZombies.has(j)) continue;
+          b.hitZombies.add(j);
+        }
         const falloff = (b.pierce && b.pierce < 999 && b.pierceCount > 0) ? Math.pow(0.6, b.pierceCount) : 1;
         z.hp -= b.damage * falloff;
         z.stagger=80;
         spawnParticles(b.x,b.y,'#cc2200',4,2);
         if (b.explosive>0) explode(b.x,b.y,40+b.explosive*15,b.damage*0.5,'player');
         if (z.hp<=0) z._dead = true;
-        // Pierce logic
-        if (b.pierce && b.pierceCount < b.pierce) {
+        if (b.pierce > 0 && b.pierceCount < b.pierce) {
           b.pierceCount++;
-          // Railgun: leave a trail spark
           if (b.pierce >= 999) spawnParticles(b.x,b.y,'#00d2ff',3,2,'spark');
+          // Don't break — keep checking other zombies in line
         } else {
           if (!b.flame && !bulletRemoved) { G.bullets.splice(i,1); bulletRemoved=true; }
           break;
@@ -2897,7 +2923,7 @@ function updateInfection(dt) {
 
   // 100% : start 2-minute death countdown
   if (inf >= 100) {
-    if (!G.player.infectionDeathTimer) {
+    if (G.player.infectionDeathTimer === undefined || G.player.infectionDeathTimer === 0) {
       G.player.infectionDeathTimer = 120;
       addFloatingText('☣ FULLY INFECTED! Get the cure!', canvas.width/2, canvas.height/2-80, '#b44fff');
     }
@@ -3642,11 +3668,27 @@ function drawPlayer() {
   ctx.fillStyle='#2d4a6e';
   ctx.fillRect(4,-5,6,12);
   ctx.fillStyle='#c8956c'; ctx.beginPath(); ctx.arc(7,9,3.5,0,Math.PI*2); ctx.fill();
-  // Gun
+  // Gun — draw actual weapon sprite scaled to fit the arm
   const slot=G.player.slots[G.player.selectedSlot];
-  ctx.fillStyle='#718096'; ctx.fillRect(8,-3,22,5);
-  ctx.fillStyle='#4a5568'; ctx.fillRect(28,-2,5,3);
-  ctx.fillStyle='#555'; ctx.fillRect(12,2,5,7);
+  if (slot) {
+    const wDef = WEAPONS[slot.weapon];
+    if (wDef && wDef.draw) {
+      ctx.save();
+      ctx.translate(8, -8); // position gun at arm end
+      ctx.scale(0.55, 0.55); // scale down to fit
+      wDef.draw(ctx, 64, 36);
+      ctx.restore();
+    } else {
+      // Fallback generic gun
+      ctx.fillStyle='#718096'; ctx.fillRect(8,-3,22,5);
+      ctx.fillStyle='#4a5568'; ctx.fillRect(28,-2,5,3);
+      ctx.fillStyle='#555'; ctx.fillRect(12,2,5,7);
+    }
+  } else {
+    ctx.fillStyle='#718096'; ctx.fillRect(8,-3,22,5);
+    ctx.fillStyle='#4a5568'; ctx.fillRect(28,-2,5,3);
+    ctx.fillStyle='#555'; ctx.fillRect(12,2,5,7);
+  }
   // Muzzle flash
   if (slot&&!slot.reloading&&G.mouse.down&&performance.now()-G.player.lastShot<70) {
     // Draw flash at gun tip (x=33 in rotated local space)
@@ -4834,7 +4876,7 @@ function triggerGameOver(reason) {
   if (G.gameOver) return;
   G.gameOver=true; G.running=false;
   // Stop all ambient loops
-  ['day_amb','night_amb','campfire','rain_loop','flame_loop','zombie_loop'].forEach(k=>stopLoop(k,0));
+  ['day_amb','night_amb','campfire','rain_loop','flame_loop','zombie_loop','blizzard_loop'].forEach(k=>stopLoop(k,0));
 
   // Award perk coins based on wave reached
   const coinsEarned = Math.floor(G.wave * 2 + G.totalKills * 0.1);
@@ -5051,10 +5093,12 @@ function _drawSkillTreeBase(sc, W, H) {
     sc.fillStyle = 'rgba(255,255,255,0.04)';
     sc.beginPath(); sc.roundRect(nx2+4, ny2+8, ST.NW-8, 18, 4); sc.fill();
 
-    // Icon
+    // Icon — always full alpha so it's readable even when locked
+    sc.globalAlpha = 1;
     sc.font = '32px serif';
     sc.textAlign = 'center';
     sc.fillText(node.icon, nx2+ST.NW/2, ny2+48);
+    sc.globalAlpha = unlocked ? 1 : 0.35; // restore for name/dots
 
     // Name
     sc.font = 'bold 11px Rajdhani,sans-serif';
@@ -5248,7 +5292,7 @@ document.getElementById('pause-main-menu').addEventListener('click', () => {
   document.getElementById('shop-overlay').classList.add('hidden');
   document.getElementById('zombie-count-badge').style.display = 'none';
   // Stop all audio
-  ['day_amb','night_amb','campfire','rain_loop','flame_loop','zombie_loop'].forEach(k=>stopLoop(k,0));
+  ['day_amb','night_amb','campfire','rain_loop','flame_loop','zombie_loop','blizzard_loop'].forEach(k=>stopLoop(k,0));
   // Hide gameplay UI
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('toolbar').classList.add('hidden');
@@ -5343,13 +5387,20 @@ function gameLoop(ts) {
     if (_st) _st.textContent = G.player.sprinting ? 'SPRINT' : (G.player.sprintExhausted ? 'TIRED' : Math.floor(_s) + '%');
   }
   // ── Inventory bar live update (every frame alongside stamina) ──
+  // Cache DOM refs once
+  if (!G._invEls) {
+    G._invEls = {};
+    ['grenade','mine','barricade','sentry','turret','medkit','molotov','c4'].forEach(k=>{
+      G._invEls[k] = { count: document.getElementById('inv-count-'+k), slot: document.getElementById('inv-'+k) };
+    });
+  }
   const _invKeys = ['grenade','mine','barricade','sentry','turret','medkit','molotov','c4'];
   _invKeys.forEach(key => {
     const cnt = G.player.inventory[key]||0;
-    const countEl = document.getElementById('inv-count-'+key);
-    const slotEl  = document.getElementById('inv-'+key);
-    if (countEl) { countEl.textContent=cnt; countEl.className='inv-count'+(cnt===0?' zero':''); }
-    if (slotEl)  { slotEl.classList.toggle('has-items', cnt>0); }
+    const els = G._invEls[key];
+    if (!els) return;
+    if (els.count) { els.count.textContent=cnt; els.count.className='inv-count'+(cnt===0?' zero':''); }
+    if (els.slot)  { els.slot.classList.toggle('has-items', cnt>0); }
   });
   const _bf = document.getElementById('battery-bar-fill');
   if (_bf) {
