@@ -2124,6 +2124,10 @@ function movePlayer(dt) {
       p._lastWaterStep = nowW;
       playSound('walk_water', 0.1);
     }
+  } else {
+    // Reset timers when out of water so sound doesn't queue up
+    p._lastWaterStep = performance.now();
+    p._lastWaterSplash = performance.now();
   }
 
   // Footstep sounds
@@ -4628,15 +4632,27 @@ function renderSkillTree() {
     const ny2 = ST.HEADER + ST.PAD + node.y*ST.ROW + ST.NH/2;
     const parentLvl = getPerkLevel(parent.id);
     const col = node.color||'#555';
+    const midY = (py2+ny2)/2;
 
-    sc.strokeStyle = parentLvl > 0 ? col+'cc' : '#2a2a3a';
-    sc.lineWidth = parentLvl > 0 ? 3 : 2;
-    sc.setLineDash(parentLvl > 0 ? [] : [6,6]);
+    // Glow line for unlocked connections
+    if (parentLvl > 0) {
+      sc.strokeStyle = col+'44';
+      sc.lineWidth = 6;
+      sc.setLineDash([]);
+      sc.shadowColor = col;
+      sc.shadowBlur = 8;
+      sc.beginPath();
+      sc.moveTo(px2, py2);
+      sc.bezierCurveTo(px2, midY, nx2, midY, nx2, ny2);
+      sc.stroke();
+      sc.shadowBlur = 0;
+    }
 
-    // Curved bezier connection
+    sc.strokeStyle = parentLvl > 0 ? col+'cc' : '#1e2030';
+    sc.lineWidth = parentLvl > 0 ? 2.5 : 1.5;
+    sc.setLineDash(parentLvl > 0 ? [] : [5,5]);
     sc.beginPath();
     sc.moveTo(px2, py2);
-    const midY = (py2+ny2)/2;
     sc.bezierCurveTo(px2, midY, nx2, midY, nx2, ny2);
     sc.stroke();
     sc.setLineDash([]);
@@ -4644,12 +4660,14 @@ function renderSkillTree() {
     // Arrow at end
     if (parentLvl > 0) {
       const angle = Math.atan2(ny2-midY, nx2-px2);
-      sc.fillStyle = col+'cc';
+      sc.fillStyle = col+'dd';
+      sc.shadowColor = col; sc.shadowBlur = 6;
       sc.beginPath();
       sc.moveTo(nx2, ny2);
       sc.lineTo(nx2-10*Math.cos(angle-0.4), ny2-10*Math.sin(angle-0.4));
       sc.lineTo(nx2-10*Math.cos(angle+0.4), ny2-10*Math.sin(angle+0.4));
       sc.closePath(); sc.fill();
+      sc.shadowBlur = 0;
     }
   });
 
@@ -4665,71 +4683,90 @@ function renderSkillTree() {
     const col = node.color || '#555';
     const isHovered = stTooltip === node;
 
-    sc.globalAlpha = unlocked ? 1 : 0.4;
+    sc.globalAlpha = unlocked ? 1 : 0.35;
 
-    // Drop shadow
-    sc.shadowColor = maxed ? col : isHovered ? col : 'rgba(0,0,0,0.5)';
-    sc.shadowBlur = maxed ? 20 : isHovered ? 16 : 8;
-    sc.shadowOffsetY = 3;
+    // Outer glow for maxed/hovered nodes
+    if (maxed || isHovered) {
+      sc.shadowColor = col;
+      sc.shadowBlur = maxed ? 28 : 18;
+      sc.shadowOffsetY = 0;
+    } else {
+      sc.shadowColor = 'rgba(0,0,0,0.6)';
+      sc.shadowBlur = 10;
+      sc.shadowOffsetY = 4;
+    }
 
-    // Node body
+    // Node body — richer gradient
     const grad = sc.createLinearGradient(nx2, ny2, nx2, ny2+ST.NH);
     if (maxed) {
-      grad.addColorStop(0, col+'55'); grad.addColorStop(1, col+'22');
+      grad.addColorStop(0, col+'66'); grad.addColorStop(0.5, col+'33'); grad.addColorStop(1, col+'18');
     } else if (unlocked) {
-      grad.addColorStop(0, '#1e2438'); grad.addColorStop(1, '#141824');
+      grad.addColorStop(0, '#1a2040'); grad.addColorStop(1, '#0e1428');
     } else {
-      grad.addColorStop(0, '#0e1018'); grad.addColorStop(1, '#0a0c12');
+      grad.addColorStop(0, '#0c0e16'); grad.addColorStop(1, '#080a10');
     }
     sc.fillStyle = grad;
-    sc.strokeStyle = maxed ? col : unlocked ? (canAfford ? col+'bb' : col+'55') : '#2a2a3a';
-    sc.lineWidth = maxed ? 3 : isHovered ? 2.5 : 1.5;
-    sc.beginPath(); sc.roundRect(nx2, ny2, ST.NW, ST.NH, 12); sc.fill(); sc.stroke();
+    sc.strokeStyle = maxed ? col : unlocked ? (canAfford ? col+'cc' : col+'44') : '#1a1e2a';
+    sc.lineWidth = maxed ? 2.5 : isHovered ? 2 : 1.5;
+    sc.beginPath(); sc.roundRect(nx2, ny2, ST.NW, ST.NH, 14); sc.fill(); sc.stroke();
     sc.shadowBlur = 0; sc.shadowOffsetY = 0;
 
-    // Top color bar
-    sc.fillStyle = maxed ? col : unlocked ? col+'66' : '#2a2a3a';
-    sc.beginPath(); sc.roundRect(nx2, ny2, ST.NW, 6, [12,12,0,0]); sc.fill();
+    // Top color bar — thicker and glowing for maxed
+    if (maxed) {
+      sc.shadowColor = col; sc.shadowBlur = 12;
+    }
+    sc.fillStyle = maxed ? col : unlocked ? col+'77' : '#1a1e2a';
+    sc.beginPath(); sc.roundRect(nx2, ny2, ST.NW, maxed ? 8 : 5, [14,14,0,0]); sc.fill();
+    sc.shadowBlur = 0;
 
-    // Icon (big)
-    sc.font = '34px serif';
+    // Inner highlight stripe
+    sc.fillStyle = 'rgba(255,255,255,0.04)';
+    sc.beginPath(); sc.roundRect(nx2+4, ny2+8, ST.NW-8, 18, 4); sc.fill();
+
+    // Icon
+    sc.font = '32px serif';
     sc.textAlign = 'center';
-    sc.fillText(node.icon, nx2+ST.NW/2, ny2+46);
+    sc.fillText(node.icon, nx2+ST.NW/2, ny2+48);
 
     // Name
-    sc.font = 'bold 12px Rajdhani,sans-serif';
-    sc.fillStyle = maxed ? col : unlocked ? '#eee' : '#555';
-    sc.fillText(node.name, nx2+ST.NW/2, ny2+64);
+    sc.font = 'bold 11px Rajdhani,sans-serif';
+    sc.fillStyle = maxed ? col : unlocked ? '#dde' : '#444';
+    sc.fillText(node.name, nx2+ST.NW/2, ny2+65);
 
-    // Level dots
-    const dotR = 5, dotGap = 13;
+    // Level dots — glowing when filled
+    const dotR = 4.5, dotGap = 12;
     const totalDots = node.maxLevel;
     const dotsStartX = nx2 + ST.NW/2 - (totalDots-1)*dotGap/2;
     for (let d=0; d<totalDots; d++) {
-      sc.fillStyle = d < lvl ? col : '#1e2438';
-      sc.strokeStyle = d < lvl ? col : '#333';
+      if (d < lvl) { sc.shadowColor = col; sc.shadowBlur = 8; }
+      sc.fillStyle = d < lvl ? col : '#141824';
+      sc.strokeStyle = d < lvl ? col+'aa' : '#252535';
       sc.lineWidth = 1;
-      sc.beginPath(); sc.arc(dotsStartX+d*dotGap, ny2+80, dotR, 0, Math.PI*2);
+      sc.beginPath(); sc.arc(dotsStartX+d*dotGap, ny2+79, dotR, 0, Math.PI*2);
       sc.fill(); sc.stroke();
+      sc.shadowBlur = 0;
     }
 
     // Cost / MAX badge
     if (!maxed && unlocked) {
-      sc.fillStyle = canAfford ? 'rgba(241,196,15,0.15)' : 'rgba(100,100,100,0.1)';
-      sc.beginPath(); sc.roundRect(nx2+8, ny2+ST.NH-22, ST.NW-16, 16, 4); sc.fill();
+      sc.fillStyle = canAfford ? 'rgba(241,196,15,0.12)' : 'rgba(80,80,80,0.1)';
+      sc.beginPath(); sc.roundRect(nx2+6, ny2+ST.NH-22, ST.NW-12, 16, 5); sc.fill();
       sc.font = 'bold 10px Orbitron,sans-serif';
-      sc.fillStyle = canAfford ? '#f1c40f' : '#555';
+      sc.fillStyle = canAfford ? '#f1c40f' : '#444';
+      if (canAfford) { sc.shadowColor='#f1c40f'; sc.shadowBlur=6; }
       sc.fillText('🪙 '+cost, nx2+ST.NW/2, ny2+ST.NH-10);
+      sc.shadowBlur = 0;
     } else if (maxed) {
-      sc.fillStyle = col+'33';
-      sc.beginPath(); sc.roundRect(nx2+8, ny2+ST.NH-22, ST.NW-16, 16, 4); sc.fill();
+      sc.fillStyle = col+'44';
+      sc.beginPath(); sc.roundRect(nx2+6, ny2+ST.NH-22, ST.NW-12, 16, 5); sc.fill();
       sc.font = 'bold 10px Orbitron,sans-serif';
       sc.fillStyle = col;
+      sc.shadowColor = col; sc.shadowBlur = 8;
       sc.fillText('✓ MAXED', nx2+ST.NW/2, ny2+ST.NH-10);
+      sc.shadowBlur = 0;
     } else {
-      // Locked indicator
-      sc.font = '11px serif';
-      sc.fillStyle = '#444';
+      sc.font = '12px serif';
+      sc.fillStyle = '#333';
       sc.fillText('🔒', nx2+ST.NW/2, ny2+ST.NH-10);
     }
 
