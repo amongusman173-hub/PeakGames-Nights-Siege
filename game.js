@@ -3674,12 +3674,17 @@ function drawPlayer() {
     const wDef = WEAPONS[slot.weapon];
     if (wDef && wDef.draw) {
       ctx.save();
-      ctx.translate(8, -8); // position gun at arm end
-      ctx.scale(0.55, 0.55); // scale down to fit
+      // Draw gun sprite so the grip aligns with the hand position
+      // The draw functions center at (w/2, h/2) = (32,18) in a 64x36 canvas
+      // We want the grip (~left 30% of sprite) to sit at the arm end (x=8)
+      // So translate so sprite center maps to arm+barrel midpoint
+      ctx.translate(4, -6);
+      ctx.scale(0.52, 0.52);
+      // Shift left so grip (not center) is at hand
+      ctx.translate(-10, 0);
       wDef.draw(ctx, 64, 36);
       ctx.restore();
     } else {
-      // Fallback generic gun
       ctx.fillStyle='#718096'; ctx.fillRect(8,-3,22,5);
       ctx.fillStyle='#4a5568'; ctx.fillRect(28,-2,5,3);
       ctx.fillStyle='#555'; ctx.fillRect(12,2,5,7);
