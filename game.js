@@ -1143,7 +1143,7 @@ function tryLoot() {
   const px = G.player.x, py = G.player.y;
   for (const obj of G.lootables) {
     if (obj.looted) continue;
-    if (Math.hypot(px-obj.x, py-obj.y) > 40) continue;
+    if (Math.hypot(px-obj.x, py-obj.y) > 55) continue;
     // Loot it
     obj.looted = true;
     playSound('loot', 0.1);
@@ -1680,12 +1680,12 @@ document.addEventListener('keydown', e => {
   if (e.code==='KeyV') doMelee();                       // V = Melee
   if (e.code==='KeyF') toggleFlashlight();              // F = Flashlight (works day & night)
   if (e.code==='KeyN') toggleNightVision();             // N = Night Vision
-  if (e.code==='KeyE') {                                // E = Interact / Medkit / Loot / Shop
+  if (e.code==='KeyE') {                                // E = Interact / Loot / Shop
     if (G.phase==='day' && tryOpenShopNearCampfire()) { /* shop */ }
     else if (tryEnterStructure()) { /* structure */ }
-    else if (G.player.inventory.medkit>0) useMedkit();
-    else tryLoot();
+    else tryLoot();                                     // always try loot — medkit is on C
   }
+  if (e.code==='KeyC') { if (G.player.inventory.medkit>0) useMedkit(); } // C = Medkit
   if (e.code==='KeyG') throwGrenade();                  // G = Grenade
   if (e.code==='KeyH') placeMine();                     // H = Mine
   if (e.code==='KeyT') throwMolotov();                  // T = Molotov
@@ -2125,7 +2125,7 @@ function movePlayer(dt) {
   const jockeySlow = p._jockeySlow > 0 ? 0.4 : 1;
   if (p._jockeySlow > 0) p._jockeySlow -= dt;
   // Water walk sound + splash particles
-  const inWater = (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)] === 'water';
+  const inWater = mapTiles.length > 0 && (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)] === 'water';
   const waterSlow = inWater ? 0.45 : 1;
   if (inWater && isMoving) {
     // Splash particles (throttled)
@@ -2155,7 +2155,7 @@ function movePlayer(dt) {
     if (now2 - p._lastStep > stepInterval) {
       p._lastStep = now2;
       if (!inWater) {
-        const tile = (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)];
+        const tile = mapTiles.length > 0 ? (mapTiles[Math.floor(p.y/TILE)]||[])[Math.floor(p.x/TILE)] : 'grass';
         const sfx = (tile==='road'||tile==='building') ? 'step_concrete' : 'step_grass';
         // Subtle pitch variance for natural feel
         const pitchVar = p.sprinting ? 0.18 : 0.12;
@@ -2286,7 +2286,8 @@ function moveZombies(dt) {
       // Bile burst — spawns a horde of walkers nearby
       for(let h=0;h<4;h++) {
         const bx=z.x+(Math.random()-0.5)*80, by=z.y+(Math.random()-0.5)*80;
-        G.zombies.push({type:'walker',x:bx,y:by,hp:60,maxHp:60,speed:1.2,damage:10,reward:5,size:13,color:'#4a7a2a',ranged:false,explodes:false,boss:false,lastAttack:0,lastShot:0,infected:true,angle:0,stagger:0,walkCycle:Math.random()*Math.PI*2});
+        const bc='#4a7a2a';
+        G.zombies.push({type:'walker',x:bx,y:by,hp:60,maxHp:60,speed:1.2,damage:10,reward:5,size:13,color:bc,_colorDark:darkenColor(bc,30),_colorDark15:darkenColor(bc,15),_colorDark10:darkenColor(bc,10),_colorLight15:lightenColor(bc,15),_colorLight25:lightenColor(bc,25),_colorLight30:lightenColor(bc,30),ranged:false,explodes:false,boss:false,lastAttack:0,lastShot:0,infected:true,angle:0,stagger:0,walkCycle:Math.random()*Math.PI*2});
         G.zombiesLeft++;
       }
       spawnParticles(z.x,z.y,'#8a9a2a',12,4);
@@ -2390,6 +2391,11 @@ function moveZombies(dt) {
 }
 
 function damagePlayer(dmg, infected) {
+  // I-frames: 200ms invincibility after taking damage
+  const now_d = performance.now();
+  if (G.player._iFrameEnd && now_d < G.player._iFrameEnd) return;
+  G.player._iFrameEnd = now_d + 200;
+
   const totalArmor = (G.player.hasArmor?G.player.armor:0) + (G.player.armorPerk||0);
   const reduced = dmg * (1 - Math.min(0.8, totalArmor/100));
 
@@ -2512,7 +2518,8 @@ function killZombie(idx, z) {
     spawnParticles(z.x,z.y,'#8a9a2a',25,6);
     for(let h=0;h<6;h++) {
       const bx=z.x+(Math.random()-0.5)*120, by=z.y+(Math.random()-0.5)*120;
-      G.zombies.push({type:'walker',x:bx,y:by,hp:60,maxHp:60,speed:1.3,damage:10,reward:5,size:13,color:'#4a7a2a',ranged:false,explodes:false,boss:false,lastAttack:0,lastShot:0,infected:true,angle:0,stagger:0,walkCycle:Math.random()*Math.PI*2});
+      const bc='#4a7a2a';
+      G.zombies.push({type:'walker',x:bx,y:by,hp:60,maxHp:60,speed:1.3,damage:10,reward:5,size:13,color:bc,_colorDark:darkenColor(bc,30),_colorDark15:darkenColor(bc,15),_colorDark10:darkenColor(bc,10),_colorLight15:lightenColor(bc,15),_colorLight25:lightenColor(bc,25),_colorLight30:lightenColor(bc,30),ranged:false,explodes:false,boss:false,lastAttack:0,lastShot:0,infected:true,angle:0,stagger:0,walkCycle:Math.random()*Math.PI*2});
       G.zombiesLeft++;
     }
     // Infect player if nearby
@@ -4554,6 +4561,7 @@ function drawQuickUseHUD() {
     { key:'Y', icon:'✈',  count:inv.airstrike||0,label:'Strike'  },
     { key:'B', icon:'🧱', count:inv.barricade||0, label:'Barricade'},
     { key:'U', icon:'🗼', count:inv.turret||0,   label:'Turret'  },
+    { key:'C', icon:'💊', count:inv.medkit||0,   label:'Medkit'  },
     { key:'V', icon:'⚔',  count:-1,              label:'Melee'   },
   ];
   const slotW = 44, slotH = 44, gap = 4;
