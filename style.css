@@ -261,7 +261,14 @@ body { background:#000; overflow:hidden; font-family:'Rajdhani',sans-serif; curs
   from { text-shadow: 0 0 30px rgba(116,185,255,0.6), 0 0 60px rgba(116,185,255,0.3), 0 2px 4px rgba(0,0,0,0.9); letter-spacing:8px; }
   to   { text-shadow: 0 0 70px rgba(116,185,255,1.0), 0 0 140px rgba(116,185,255,0.6), 0 0 220px rgba(162,155,254,0.35), 0 2px 4px rgba(0,0,0,0.9); letter-spacing:9px; }
 }
-#mm-title span.accent { color:#e74c3c; text-shadow:0 0 30px rgba(231,76,60,0.8); }
+#mm-title span.accent {
+  color:#e74c3c;
+  animation:accentPulse 3s ease-in-out infinite alternate;
+}
+@keyframes accentPulse {
+  from { text-shadow:0 0 30px rgba(231,76,60,0.6), 0 0 60px rgba(231,76,60,0.3), 0 2px 4px rgba(0,0,0,0.9); }
+  to   { text-shadow:0 0 70px rgba(231,76,60,1.0), 0 0 140px rgba(231,76,60,0.6), 0 0 220px rgba(255,100,60,0.35), 0 2px 4px rgba(0,0,0,0.9); }
+}
 #mm-subtitle {
   font-family:'Orbitron',sans-serif; font-size:11px; color:#e74c3c;
   letter-spacing:8px; margin-top:6px; text-transform:uppercase;
